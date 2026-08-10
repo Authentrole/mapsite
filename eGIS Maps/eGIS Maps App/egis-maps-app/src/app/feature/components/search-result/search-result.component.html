@@ -1,0 +1,91 @@
+<!-- @if(showExpandPanel) {
+    <div class="expansion-panel-container">
+        <div class="expansion-panel" [class.expanded]="chartExpandPanel">
+            <div class="panel-header k-card" style="margin-top: 0 !important;" (click)="togglePanel()">
+                Search Result
+            </div>
+            <div class="panel-content" [class.expanded]="chartExpandPanel">
+                <div class="exp-div">
+                    <div class="card">
+                        <kendo-listview class="ken-li-view" [kendoListViewBinding]="pdfList" [pageSize]="pageSize"
+                            containerClass="k-d-flex k-flex-col k-flex-nowrap">
+                            <ng-template kendoListViewItemTemplate let-dataItem="dataItem" let-isLast="isLast">
+                                <div class="ken-li-view-item" [class.last]="isLast"
+                                    (click)="configService.openLink(dataItem.file)">
+                                    {{ dataItem.file }}
+                                </div>
+                            </ng-template>
+                        </kendo-listview>
+                        <kendo-datapager [style.width.%]="100" [pageSize]="pageSize" [skip]="skip" [total]="totalCount"
+                            (pageChange)="onPageChange($event)">
+                        </kendo-datapager>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    } -->
+
+
+@if(pdfList && pdfList.length > 0) {
+<kendo-expansionpanel title="Search Results" [(expanded)]="expandPanel">
+    <div class="exp-div">
+        <!-- <div *ngIf="pdfList" style="font-size: 0.85rem;">
+                Disclaimer:<br/>
+                For concerns about the clarity or accuracy of the PDF maps, please contact Regional Engineering Mapping Supervisor directly. Thank you!
+            </div>
+            <br/> -->
+        @if(pdfList){
+        <div class="card" style="width: 100%;">
+            <!-- <div style="margin-top: 10px;
+                        display: flex;
+                        flex-direction: row;
+                        width: 100%;
+                        justify-content: center;
+                        align-items: center;">
+                            <kendo-label class="form-label" [for]="PDF_Viewer" text="View PDF in Edge Viewer">
+                            </kendo-label>&nbsp;
+                            <kendo-switch style="font-size: 0.75rem;" #PDF_Viewer onLabel="Yes" offLabel="No"
+                                [(ngModel)]="this.pdfviewer" (valueChange)="setPDFViewer()">
+                            </kendo-switch>
+                        </div>    -->
+            <kendo-listview class="ken-li-view" [style.height.vh]="searchListHeight" [kendoListViewBinding]="pdfList"
+                [pageSize]="pageSize" containerClass="k-d-flex k-flex-col k-flex-nowrap"
+                style="font-size:0.85rem !important;">
+                <ng-template kendoListViewItemTemplate let-dataItem="dataItem" let-isLast="isLast">
+                    <div style="border: 1px solid #ccc; cursor: pointer;display: flex;justify-content: space-between;"
+                        class="ken-li-view-item" [class.last]="isLast">
+                        <div (click)="routeUrl(dataItem)" [class.isActiveContent]="dataItem['isActive']"
+                            style="width: 95%;display: flex;justify-content: space-between;">
+                            @if(dataItem.file.indexOf('|') > 0){
+                            <span
+                                style="margin: 2px 0px 2px 5px;">{{loadFiles(dataItem.file.split('|')[0].trim())}}</span>
+                            <span>{{dataItem.file.split('|')[1].trim()}}</span>
+                            }
+                            @else{
+                            <span style="margin: 2px 0px 2px 5px;">{{ loadFiles(dataItem.file.trim())}}</span>
+                            }
+                        </div>
+                        <span class="k-icon k-font-icon k-i-copy k-i-files"
+                            [class.isActiveContent]="dataItem['isCopied']"
+                            style="font-size: 0.75rem;cursor:pointer;top: 0.25rem;padding-right: 0.25rem;"
+                            title="Copy PDF URL" ngxClipboard [cbContent]="copyText"
+                            (click)="CopyContent(dataItem)"></span>
+                    </div>
+                </ng-template>
+            </kendo-listview>
+            <kendo-datapager [pageSize]="pageSize" [skip]="skip" [total]="totalCount" type="input"
+                (pageChange)="onPageChange($event)">
+            </kendo-datapager>
+        </div>
+        }
+
+        @if(!pdfList && !chartExpandPanel){
+        <div style="height: 130px;">
+            <div class="pdf-viewer-disabled">No PDF file found.</div>
+        </div>
+        }
+    </div>
+</kendo-expansionpanel>
+<br />
+}

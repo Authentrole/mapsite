@@ -1,0 +1,25 @@
+# Core (required)
+PyMuPDF>=1.23.0        # PDF -> image rendering (pip-only, no system dep)
+Pillow>=10.0.0        # image IO / drawing
+numpy>=1.24.0
+opencv-python-headless>=4.8.0   # preprocessing (deskew, contrast, invert)
+
+# OCR engines (install at least one)
+
+# Option A (RECOMMENDED, and the one actually used in this run): RapidOCR.
+# PP-OCR detection/recognition models exported to ONNX and BUNDLED IN THE WHEEL
+# -- no system binary, no runtime model download. This is the engine that
+# installs on locked-down / air-gapped corporate boxes where the others fail.
+# Good on rotated/angled map labels (same models as PaddleOCR).
+#   NOTE: the 1.4.x wheels declare Requires-Python <3.13 but run fine on 3.13;
+#   on 3.13 install with:  pip install --ignore-requires-python rapidocr-onnxruntime
+rapidocr-onnxruntime>=1.4.0    # pulls onnxruntime, shapely, pyclipper, pyyaml
+
+# Option B: Tesseract wrapper. ALSO needs the system 'tesseract' binary
+# (apt-get / brew / winget). Skipped automatically if the binary is absent.
+# pytesseract>=0.3.10
+
+# Option C: PaddleOCR (also good for maps; heavier, downloads models on first
+# run -- may be blocked on restricted networks). Uncomment to enable.
+# paddleocr>=2.7.0
+# paddlepaddle>=2.5.0

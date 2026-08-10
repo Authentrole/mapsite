@@ -1,0 +1,15 @@
+@if(coreService.isBusy$ | async){
+<div class="k-loading-panel">
+    <div class="k-loading-panel-mask"></div>
+    <div class="k-loading-panel-wrapper">
+        <kendo-loader type="infinite-spinner" themeColor="primary"></kendo-loader>
+        <div class="k-loading-panel-text">Loading...</div>
+    </div>
+</div>
+}
+
+<kendo-card style="width: 100%;height: 100vh;border-color: #495057 !important;">
+    <kendo-card-body style="padding: 0;">
+        <router-outlet></router-outlet>
+    </kendo-card-body>
+</kendo-card>

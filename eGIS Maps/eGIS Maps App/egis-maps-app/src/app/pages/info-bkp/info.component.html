@@ -1,0 +1,31 @@
+
+
+    <app-header [showTools]="false"></app-header>
+     <kendo-card style="width: 100%; height: 99vh;">
+        <kendo-card-body>
+            <div style="font-size:1rem; margin-top:5%;margin-left: 20%; margin-right: 29%;">
+                <div *ngIf="isUnauthAccess">        
+                    <h3><span class="k-icon k-font-icon  k-i-close-outline k-color-error" style="font-size:1.5rem;"></span> Unauthorized Access</h3>
+                    <br />
+                    As of June 1, 2024, Non-Operational employees must receive approval from a Band 3 level manager 
+                    to be granted access to eGIS Maps Site, ArcFM Web, or ArcFM Mobile applications.
+                    <br/>
+                    To request access, visit the <a href='https://egissupport.conedison.net' target="newwindow" style="color:#0d6efd;">eGIS Support Portal</a>.
+                </div> 
+                <div *ngIf="!isUnauthAccess">        
+                    <h3><span class="k-icon k-font-icon  k-i-close-outline k-color-error" style="font-size:1.5rem;"></span> Error</h3>
+                    <br />
+                    Failed to get information from server. Please contact <a href='mailto://dlegissupport@coned.com' target="newwindow" style="color:#0d6efd;">eGIS Support</a>.
+                </div>     
+            </div>
+        </kendo-card-body>
+    </kendo-card>
+     
+    <!-- <div style="text-align: center;height: 100%;margin: 30vh;">
+        <span class="k-icon k-font-icon  k-i-close-outline k-color-error" style="font-size: 50px;"></span>
+        <br />
+        <h3>Access denied !</h3>
+        <br />
+        You are not authorized to access this page !
+    </div> -->
+    <app-footer></app-footer>

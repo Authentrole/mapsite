@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <body>
+      <script>
+        if(window.location.origin){
+        //   if(window.location.origin.toLowerCase().indexOf('.conedison.net') < 0 && window.location.origin.toLowerCase().indexOf('localhost') < 0){
+        //     window.location.href=window.location.origin + '.conedison.net';
+        //   }
+        //   else{
+        //     window.location.href=window.location.origin + '.conedison.net';
+        //   }
+        window.location.href=window.location.href.toLowerCase().replace('html','htm').replace('advancedmappinghomepage.htm','');
+        }
+        else {
+            var newloc = window.location.protocol + '//' + window.location.host + ".conedison.net";//"/maps.html"; 
+
+            window.open('microsoft-edge:' + newloc, '_top');
+            window.close();
+
+        }
+        
+      </script>
+    </body>
+  </head>
+</html>

@@ -1,0 +1,405 @@
+<div style="display: grid;">
+    <kendo-expansionpanel title="Notification Details" expandIcon="fa fa-plus" collapseIcon="fa fa-minus"
+        [expanded]="!isHistory">
+        <div #emailDiv *ngIf="showEmails">
+            <div class="email-block"><strong>Email Recipients (BCC):</strong> {{modalData.email_Bcc}}</div>
+            <hr>
+            <span *ngIf="showEmails"><strong>Subject: </strong>{{subject}}</span>
+            <hr>
+        </div>
+        <div #modalContent style="border: 2px black solid; padding: 10px; width:60vw; justify-self: center;">
+            <!-- <div style="font-size: 24px;">
+            <span style="font-weight: bold;" *ngIf="modalData.title.indexOf('Outage') >= 0">{{modalData.title}} Notification: </span>
+            <span style="font-weight: bold;" *ngIf="modalData.title.indexOf('Outage') < 0">{{modalData.title}}: </span>
+        </div>
+        <hr> -->
+            
+            <table
+                style="background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXwAAABKCAYAAAC4s+/OAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEXSURBVHhe7dQxAQAgEAAho7jb82trD4+BCqx95gLwP+EDRAgfIEL4ABHCB4gQPkCE8AEihA8QIXyACOEDRAgfIEL4ABHCB4gQPkCE8AEihA8QIXyACOEDRAgfIEL4ABHCB4gQPkCE8AEihA8QIXyACOEDRAgfIEL4ABHCB4gQPkCE8AEihA8QIXyACOEDRAgfIEL4ABHCB4gQPkCE8AEihA8QIXyACOEDRAgfIEL4ABHCB4gQPkCE8AEihA8QIXyACOEDRAgfIEL4ABHCB4gQPkCE8AEihA8QIXyACOEDRAgfIEL4ABHCB4gQPkCE8AEihA8QIXyACOEDRAgfIEL4ABHCB4gQPkCE8AEihA8QIXyACOEDJMx9uqYjKiofv0EAAAAASUVORK5CYII=); background-color: darkblue; width: 100%; height: 60px;">
+                <tr>
+                    <td style="width:200px; padding-top:10px;">
+                        <img
+                            src='data:image/png;base64,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' />
+                    </td>
+                    <td>
+                        <h1 style="color: white; margin-top: -10px; margin-left: 5px;"
+                            *ngIf="modalData.title.indexOf('Outage') >= 0">{{modalData.title}} Notification</h1>
+                        <h1 style="color: white; margin-top: -10px; margin-left: 5px;"
+                            *ngIf="modalData.title.indexOf('Outage') < 0">{{modalData.title}}</h1>
+                    </td>
+                </tr>
+                <!-- <img src="assets/img/logo.svg" alt="ConEdison" style="width:190px;height:37px;margin-left:5px; margin-top: 10px;"> -->
+                <!-- <img src="assets/img/eGIS_Logo.png" alt="eGIS" style="height:50px; margin-top: 5px;"> -->
+                <!-- <span class="vl"></span> -->
+                <!-- <h2 style="color: white; margin-top: 5px; margin-left: 5px;">{{modalData.title}} Notification</h2> -->
+
+            </table>
+            <!-- <div>
+        <img style="background: transparent;border-radius: 100%;" src="data:image/png;base64, /9j/4AAQSkZJRgABAQEAYABgAAD/4QAiRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAEAAAAAAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAAXABcDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3T9ur9u3xX+1F8WfF3hTwr4u8SeBfgv4G1ifwtc3Phe9bTte+IesWzKL2OO9A8yz061k/cs8OGuHD/M8bgR+GeHv2P/BaL/blj8M7bS78HzBrWl6/q9rrcbdfMW9+1F/M77iCAecVxnwMW60L9n74awaoH/tLR4tV0rW1fmSLVodZvvtqyf8ATTeysQecMtfafw+/aV8OaL8Fp9Kks7drqZMeYVBYfSv5z4h4szCvneIwzxMqEKLailpe3V97766WP5L4q44zXE8R4rCPGSw1Og2oKLtdx6vvzb66WZs/8E6f24/FXw9+NOgfB/4meLNQ8aeF/G0N2PAvjDXXX+17K7s4PPuNF1WZQBPILdHmhu3w0gjdXZ3ZQhXwv+21aeIPiV8DF0fwOtxJ4y8QeNbRPDcVtkXEksGnajLdmPHJC25w2P765or9k4HzivmeT08Xifid033s7X+Z+/eHOfYnOMho43GfG7pvbm5Xbm+dvvPtr9vj/gmd4y8IfFLxd8S/hD4fs/G/hXxxdHXPGfgE6jBpN7aantCy61pFzNi3WWVRvuYJyqysrOGZ2VU+B/Cv7UPw78Y/EhfBOgw/E/XPGkk32aPw2ml6dZzSTZx5RvJL426gnjf8w74oorPOuBclzSv9bxlK811Tavbva1zPiDw14fzrFfXcfQvU0u03Hmtb4rNX/M/TH/gnD/wTg8V/DP4rWXxi+MVnpGi+MNFsJtN8F+C9OuRqFr4Et7gD7VcTXWNtzqk6/u5Jo/3aRl0RnRwEKKK+kwmFo4ejGhQiowirJLZI+yy/L8PhcPDDYaKhCCsktEkj/9k=" alt="Green" />
+    </div> -->
+
+            <div *ngIf="showEmails">
+                <br />
+                <span>To All: </span>
+            </div>
+            <div *ngIf="modalData.title.indexOf('Outage') >= 0" class="container">
+                <div id="completionmsgDiv" *ngIf="modalData.isCompleted && modalData.completionmsg">
+                    <p style="word-break: break-word;" class="message-p-tag">{{modalData.completionmsg}} <span
+                            *ngIf="modalData.commodities && modalData.environments"> on
+                            {{modalData.commodities}} in {{modalData.environments}} environment(s)</span>
+                    </p>
+                    <div *ngIf="modalData.title !== announcementType">
+                        <p *ngIf="modalData.applications">The following applications are available for all regions:</p>
+                        <table *ngIf="modalData.applications" border="2">
+                            <thead>
+
+                                <tr style="text-align: center;">
+                                    <th style="width: 125px;" rowspan="2">
+                                        Region
+                                    </th>
+                                    <th *ngFor='let commodity of modalData.commodities.split(",") ;' [attr.colspan]="commodityApps[commodity.trim()].length"
+                                        style="width: 125px;">
+                                        {{commodity}}
+                                    </th>
+                                </tr>
+                                <tr style="text-align: center;">
+                                    <ng-template ngFor let-commodity [ngForOf]='modalData.commodities.split(",")'>
+                                        <th *ngFor='let app of commodityApps[commodity.trim()] ;' style="width: 125px;">
+                                            {{app.split('|')[0].replace(commodity.trim(), '').trim()}}
+                                        </th>
+                                    </ng-template>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        All
+                                    </td>
+                                    <ng-template ngFor let-commodity [ngForOf]='modalData.commodities.split(",")'>
+                                        <td *ngFor='let app of commodityApps[commodity.trim()] ;' style="text-align: center;">
+                                            <img style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;" src='data:image/jpeg;base64,{{this.ragImages.green}}'/>
+                                        </td>
+                                        
+                                    </ng-template>
+                                   
+                                </tr>
+                            </tbody>
+                        </table>
+                        <br />
+                        <table>
+                            <tr>
+                                <td>
+                                    <img style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                        src='data:image/png;base64,{{this.ragImages.green}}'
+                                        alt="Green" />                                    
+                                </td>
+                                <td> - Available</td>
+                                <td>&nbsp;</td>
+                                <td>
+                                    <img style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                        src='data:image/png;base64,{{this.ragImages.red}}'
+                                        alt="Red" />
+                                </td>
+                                <td> - Unavailable</td>
+                                <td>&nbsp;</td>
+                                <td>
+                                    <img style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                        src='data:image/png;base64,{{this.ragImages.amber}}'
+                                        alt="Yellow" />
+                                </td>
+                                <td> - Partially Available</td>                                
+                            </tr>
+                        </table>
+                    </div>
+
+                </div>
+                <div id="additionalmsgDiv"
+                    *ngIf="modalData.additionalmsg && !(modalData.isCompleted && modalData.completionmsg)">
+                    <p style="word-break: break-word;" class="message-p-tag">{{modalData.additionalmsg}}</p>
+                    <!-- <hr> -->
+                </div>
+                <div id="msgDiv"
+                    *ngIf="modalData.message && !modalData.additionalmsg && !(modalData.isCompleted && modalData.completionmsg)">
+                    <p style="word-break: break-word;" class="message-p-tag">
+                        {{modalData.message}} <span *ngIf="modalData.environments && modalData.commodities"> on
+                            {{modalData.commodities}} in {{modalData.environments}}</span>
+                        environment(s)
+                        <span *ngIf="modalData.fromDate && modalData.toDate"><strong> from
+                                {{modalData.fromDate | date: 'EEEE MM/dd/yyyy hh:mm a'}} to {{modalData.toDate
+                                | date: 'EEEE MM/dd/yyyy hh:mm a'}}</strong>
+                        </span>
+                    </p>
+                    <span>
+                        <p>This will affect eGIS applications as below:</p>
+                        <table *ngIf="modalData.applications" border="2">
+                            <thead>
+                                <tr style="text-align: center;">
+                                    <th style="width: 125px;" rowspan="2">
+                                        Region
+                                    </th>
+                                    <th *ngFor='let commodity of modalData.commodities.split(",") ;' [attr.colspan]="commodityApps[commodity.trim()].length"
+                                        style="width: 125px;">
+                                        {{commodity}}
+                                    </th>
+                                </tr>
+                                <tr style="text-align: center;">
+                                    <ng-template ngFor let-commodity [ngForOf]='modalData.commodities.split(",")'>
+                                        <th *ngFor='let app of commodityApps[commodity.trim()] ;' style="width: 125px;">
+                                            {{app.split('|')[0].replace(commodity.trim(), '').trim()}}
+                                            <!-- {{app}} -->
+                                        </th>
+                                    </ng-template>
+                                </tr>
+                            </thead>
+                            <tbody *ngIf="modalData.regions">
+                                <tr *ngFor='let region of modalData.regions.split(",") ;'>
+                                    <td>
+                                        {{region}}
+                                    </td>
+                                    <ng-template ngFor let-commodity [ngForOf]='modalData.commodities.split(",")'>
+                                        <td *ngFor='let app of commodityApps[commodity.trim()] ;' style="text-align: center;">
+                                            <img *ngIf="app.split('|')[1] == 'av'"
+                                                style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                                src='data:image/png;base64,{{this.ragImages.green}}'
+                                                alt="Green" />
+
+                                            <img *ngIf="app.split('|')[1] == 'un'"
+                                                style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                                src='data:image/png;base64,{{this.ragImages.red}}'
+                                                alt="Red" />
+
+                                            <img *ngIf="app.split('|')[1] == 'pa'"
+                                                style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                                src='data:image/png;base64,{{this.ragImages.amber}}'
+                                                alt="Yellow" />
+
+                                        </td>
+                                    </ng-template>
+                                </tr>
+                            </tbody>
+                            <tbody *ngIf="!modalData.regions">
+                                <tr>
+                                    <td>
+                                        All
+                                    </td>
+                                    <ng-template ngFor let-commodity [ngForOf]='modalData.commodities.split(",")'>
+                                        <td *ngFor='let app of commodityApps[commodity.trim()] ;' style="text-align: center;">
+                                            <img *ngIf="app.split('|')[1] == 'av'"
+                                                style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                                src='data:image/png;base64,{{this.ragImages.green}}'
+                                                alt="Green" />
+
+                                            <img *ngIf="app.split('|')[1] == 'un'"
+                                                style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                                src='data:image/png;base64,{{this.ragImages.red}}'
+                                                alt="Red" />
+
+                                            <img *ngIf="app.split('|')[1] == 'pa'"
+                                                style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                                src='data:image/png;base64,{{this.ragImages.amber}}'
+                                                alt="Yellow" />
+                                        </td>
+                                    </ng-template>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <br />
+                        <table>
+                            <tr>
+                                <td>
+                                    <img style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                        src='data:image/png;base64,{{this.ragImages.green}}'
+                                        alt="Green" />                                    
+                                </td>
+                                <td> - Available</td>
+                                <td>&nbsp;</td>
+                                <td>
+                                    <img style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                        src='data:image/png;base64,{{this.ragImages.red}}'
+                                        alt="Red" />
+                                </td>
+                                <td> - Unavailable</td>
+                                <td>&nbsp;</td>
+                                <td>
+                                    <img style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                        src='data:image/png;base64,{{this.ragImages.amber}}'
+                                        alt="Yellow" />
+                                </td>
+                                <td> - Partially Available</td>                                
+                            </tr>
+                        </table>
+                    </span>
+
+                    <br />
+                    <span *ngIf="modalData.title.indexOf('Outage') >= 0">Notifications will be sent before the start of
+                        outage and after completion of outage.
+                    </span>
+                </div>
+            </div>
+            <div *ngIf="modalData.title.indexOf('Outage') < 0" class="container">
+                <div id="completionmsgDiv" *ngIf="modalData.isCompleted && modalData.completionmsg">
+                    <p style="word-break: break-word;" class="message-p-tag">{{modalData.completionmsg}} <span
+                            *ngIf="modalData.commodities && modalData.environments"> on
+                            {{modalData.commodities}} in {{modalData.environments}} environment(s)</span>
+                    </p>
+
+                </div>
+                <div id="additionalmsgDiv"
+                    *ngIf="modalData.additionalmsg && !(modalData.isCompleted && modalData.completionmsg)">
+                    <p style="word-break: break-word;" class="message-p-tag">{{modalData.additionalmsg}}</p>
+                    <!-- <hr> -->
+                </div>
+                <div id="msgDiv"
+                    *ngIf="modalData.message && !modalData.additionalmsg && !(modalData.isCompleted && modalData.completionmsg)">
+                    <p style="word-break: break-word;" class="message-p-tag">
+                        {{modalData.message}} <span *ngIf="modalData.environments && modalData.commodities"> on
+                            {{modalData.commodities}} in {{modalData.environments}}</span>
+                        environment(s)
+                        <span *ngIf="modalData.fromDate && modalData.toDate"><strong> from
+                                {{modalData.fromDate | date: 'EEEE MM/dd/yyyy hh:mm a'}} to {{modalData.toDate
+                                | date: 'EEEE MM/dd/yyyy hh:mm a'}}</strong>
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div style="margin-top: 20pt;" *ngIf="showEmails">
+                <span>Thanks </span><br>
+                <span>eGIS Application Support </span>
+            </div>
+        </div>
+    </kendo-expansionpanel>
+    <kendo-expansionpanel [hidden]="!isHistory" title="Notification History" expandIcon="fa fa-plus"
+        collapseIcon="fa fa-minus" [expanded]="isHistory">
+        <!-- <hr style="width: 100%;" /> -->
+        <div>
+            <div class="container">
+                <div id="additionalmsgDiv"
+                    *ngIf="modalData.additionalmsg  && (modalData.isCompleted && modalData.completionmsg)">
+                    <p style="word-break: break-word;" class="message-p-tag">{{modalData.additionalmsg}}</p>
+                    <hr>
+                </div>
+                <div id="msgDiv" *ngIf="modalData.message">
+                    <p style="word-break: break-word;" class="message-p-tag">
+                        {{modalData.message}} <span *ngIf="modalData.commodities && modalData.environments"> on
+                            {{modalData.commodities}} in {{modalData.environments}}
+                            environment(s) </span>
+                        <span *ngIf="modalData.fromDate && modalData.toDate"><strong> from
+                                {{modalData.fromDate | date: 'EEEE MM/dd/yyyy hh:mm a'}} to {{modalData.toDate
+                                | date: 'EEEE MM/dd/yyyy hh:mm a'}}</strong>
+                        </span>
+                    </p>
+                    <span>
+                        <p>This will affect eGIS applications as below:</p>
+                        <table *ngIf="modalData.applications" border="2">
+                            <thead>
+                                <tr style="text-align: center;">
+                                    <th style="width: 125px;" rowspan="2">
+                                        Region
+                                    </th>
+                                    <th *ngFor='let commodity of modalData.commodities.split(",") ;' [attr.colspan]="commodityApps[commodity.trim()].length"
+                                        style="width: 125px;">
+                                        {{commodity}}
+                                    </th>
+                                </tr>
+                                <tr style="text-align: center;">
+                                    <ng-template ngFor let-commodity [ngForOf]='modalData.commodities.split(",")'>
+                                        <th *ngFor='let app of commodityApps[commodity.trim()] ;' style="width: 125px;">
+                                            {{app.split('|')[0].replace(commodity.trim(), '').trim()}}
+                                        </th>
+                                    </ng-template>
+                                </tr>
+                            </thead>
+                            <tbody *ngIf="modalData.regions">
+                                <tr *ngFor='let region of modalData.regions.split(",") ;'>
+                                    <td>
+                                        {{region}}
+                                    </td>
+                                    <ng-template ngFor let-commodity [ngForOf]='modalData.commodities.split(",")'>
+                                        <td *ngFor='let app of commodityApps[commodity.trim()] ;' style="text-align: center;">
+                                            <img *ngIf="app.split('|')[1] == 'av'"
+                                                style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                                src='data:image/png;base64,{{this.ragImages.green}}'
+                                                alt="Green" />
+
+                                            <img *ngIf="app.split('|')[1] == 'un'"
+                                                style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                                src='data:image/png;base64,{{this.ragImages.red}}'
+                                                alt="Red" />
+                                            <img *ngIf="app.split('|')[1] == 'pa'"
+                                                style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                                src='data:image/png;base64,{{this.ragImages.amber}}'
+                                                alt="Yellow" />
+                                        </td>
+                                    </ng-template>
+                                </tr>
+                            </tbody>
+                            <tbody *ngIf="!modalData.regions">
+                                <tr>
+                                    <td>
+                                        All
+                                    </td>
+                                    <ng-template ngFor let-commodity [ngForOf]='modalData.commodities.split(",")'>
+                                        <td *ngFor='let app of commodityApps[commodity.trim()] ;' style="text-align: center;">
+                                            <img *ngIf="app.split('|')[1] == 'av'"
+                                                style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                                src='data:image/png;base64,{{this.ragImages.green}}'
+                                                alt="Green" />
+
+                                            <img *ngIf="app.split('|')[1] == 'un'"
+                                                style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                                src='data:image/png;base64,{{this.ragImages.red}}'
+                                                alt="Red" />
+
+                                            <img *ngIf="app.split('|')[1] == 'pa'"
+                                                style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                                src='data:image/png;base64,{{this.ragImages.amber}}'
+                                                alt="Yellow" />
+                                        </td>
+                                    </ng-template>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <br />
+                        <table>
+                            <tr>
+                                <td>
+                                    <img style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                        src='data:image/png;base64,{{this.ragImages.green}}'
+                                        alt="Green" />                                    
+                                </td>
+                                <td> - Available</td>
+                                <td>&nbsp;</td>
+                                <td>
+                                    <img style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                        src='data:image/png;base64,{{this.ragImages.red}}'
+                                        alt="Red" />
+                                </td>
+                                <td> - Unavailable</td>
+                                <td>&nbsp;</td>
+                                <td>
+                                    <img style="background: transparent;border-radius: 100%;width:25px;height:25px;vertical-align: middle;"
+                                        src='data:image/png;base64,{{this.ragImages.amber}}'
+                                        alt="Yellow" />
+                                </td>
+                                <td> - Partially Available</td>                                
+                            </tr>
+                        </table>
+                    </span>
+
+                    <br />
+                    <span *ngIf="modalData.title.indexOf('Outage') >= 0">Notifications will be sent before the start of
+                        outage and after completion of outage.
+                    </span>
+                </div>
+            </div>
+        </div>
+    </kendo-expansionpanel>
+    <hr style="width: 100%;" />
+    <div style="width: 100%; display: flex; justify-content: right;padding: 10px;">
+        <button kendoButton themeColor="primary"
+            *ngIf="modalData.title.indexOf('Outage') >= 0 && (modalData.additionalmsg || (modalData.isCompleted && modalData.completionmsg))"
+            (click)="isHistory=!isHistory;">History</button>
+        &nbsp;&nbsp;
+        <button kendoButton themeColor="secondary" (click)="onCloseAction()">Close</button>
+    </div>
+</div>

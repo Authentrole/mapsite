@@ -1,0 +1,63 @@
+// html,
+// body,
+// app-root {
+//   padding: 0;
+//   height: 100%;
+// }
+
+// app-root {
+//   display: flex;
+//   flex-direction: column;
+// }
+
+
+.content {
+    position: absolute;
+    top: 60px;
+    width: 100% !important;
+    height: 91vh;
+    padding: 10px;
+  }
+
+  // .k-loading-panel-wrapper{
+  //   height: 100vh;
+  //   text-align: center;
+  //   align-content: center;
+  //   opacity: 0.1;
+  //   background-color: transparent;
+  //   color: white;
+  //   position: relative;
+  //   z-index: 9999999;
+  // }
+
+
+  .k-loading-panel {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.k-loading-panel-mask {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  z-index: 2147483646 !important;
+}
+
+.k-loading-panel-wrapper {
+  position: relative !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}

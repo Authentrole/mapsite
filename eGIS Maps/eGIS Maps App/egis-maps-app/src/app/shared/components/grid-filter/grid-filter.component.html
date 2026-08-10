@@ -1,0 +1,51 @@
+<ul>
+  <li *ngIf="showFilter">
+    <input
+      class="k-textbox k-input k-rounded-md"
+      (input)="onInput($event)"
+    />
+  </li>
+  <li *ngIf="currentData.length > 1"
+    (click)="onSelectAll()"
+    [ngClass]="{ 'k-selected':  isSelectAll}"
+    class="filter-item"
+    >
+    <input
+      type="checkbox"
+      #selectAll
+      kendoCheckBox
+      [checked]="isSelectAll"
+      [indeterminate]="isAllSeleced"
+    />
+    <kendo-label 
+    class="k-checkbox-label"
+    [for]="selectAll"
+    text="Select All"
+  ></kendo-label>
+  </li>
+  <li
+    #itemElement
+    *ngFor="let item of currentData; let i = index"
+    (click)="onSelectionChange(valueAccessor(item), itemElement)"
+    [ngClass]="{ 'k-selected': isItemSelected(item) }"
+    class="filter-item"
+  >
+    <input
+      type="checkbox"
+      #filterValue
+      kendoCheckBox
+      [checked]="isItemSelected(item)"
+    />
+    
+    <!-- <kendo-label *ngIf="field.includes('Date')"
+      class="k-checkbox-label"
+      [for]="notification"
+      text="{{textAccessor(item) != '(Blank)' ? (textAccessor(item) | date: 'MM/dd/yyyy hh:mm a') : textAccessor(item)}}"
+    ></kendo-label> -->
+    <kendo-label 
+    class="k-checkbox-label"
+    [for]="filterValue"
+    text="{{textAccessor(item)}}"
+  ></kendo-label>
+  </li>
+</ul>

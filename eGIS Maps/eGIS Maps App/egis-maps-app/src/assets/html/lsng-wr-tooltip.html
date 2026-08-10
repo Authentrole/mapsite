@@ -1,0 +1,33 @@
+<div style="max-width: 30rem; padding: 0.5rem;">
+    Enter WR numbers associated with the layout. 
+    <ul>
+        <li>Must start with 5 digit WR number</li>
+        <li>Separate multiple WR numbers with a comma (,), forwardslash (/), or hyphen (-)</li>
+        <li>‘–’ : To indicate a range
+            <div style="padding: 0.5rem;" class="wr-tooltip">
+                <ul>
+                    <li>12345-7 for 12345, 12346, 12347</li>
+                    <li>12349-51 for 12349, 12350, 12351</li>
+                    <li>12345-12347 for 12345, 12346, 12347</li>
+                </ul>
+            </div>
+        </li>
+        <li>‘/’ : To separate multiple WR numbers
+            <div style="padding: 0.5rem;" class="wr-tooltip">
+                <ul>
+                    <li>12345/7 for 12345, 12347</li>
+                    <li>12385/415 for 12345,12415</li>
+                    <li>12349/18273/71621 for 12349,18273,71621</li>
+                </ul>
+            </div>
+        </li>
+        <li>‘,’ : To separate multiple WR numbers
+            <div style="padding: 0.5rem;" class="wr-tooltip">
+                <ul>
+                    <li>WR number after ',' must be 5 digits</li>
+                    <li>12349,18273,71621 for 12349,18273,71621</li>
+                </ul>
+            </div>
+        </li>
+    </ul>
+</div>

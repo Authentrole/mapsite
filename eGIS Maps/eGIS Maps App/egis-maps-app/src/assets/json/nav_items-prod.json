@@ -1,0 +1,47 @@
+[
+    {
+        "name": "Electric",
+        "url": "assets/json/Electric.json"
+    },
+    {
+        "name": "Gas",
+        "url": "assets/json/Gas.json"
+    },
+    {
+        "name": "Steam",
+        "url":"assets/json/Steam.json"
+    },
+    {
+        "name": "Regions",
+        "url": "assets/json/Regions.json"
+    },
+    {
+        "name": "eGIS Support",
+        "url":"https://egissupport.conedison.net/"
+    },
+    {
+        "name": "Production Portal",
+        "url":"https://egisportal.conedison.net/portal/home/index.html"
+    },
+    {
+        "name": "Reporting Portal",
+        "url":"https://egisreporting.conedison.net/"
+    },
+    {
+        "name": "Symbols",
+        "url":"https://ceorg/sites/electricops/SiteDirectory/MappingCommittee/Shared%20Documents/Forms/AllItems.aspx?RootFolder=%2fsites%2felectricops%2fSiteDirectory%2fMappingCommittee%2fShared%20Documents%2fSystem%20Symbols&FolderCTID=0x01200072BE1817134B9745BBC05537652C8373"
+    },
+    {
+        "name": "Archived Maps",
+        "url":"https://ceapps/sites/DF/Pages/ArchiveMaps.aspx"
+    },
+    {
+        "name": "eGIS Knowledge Hub",
+        "url":"https://ceorg/ir/EGISKHUB/SitePages/eGIS%20Home.aspx"
+    },
+    {
+        "name": "Contact eGIS Support",
+        "url":"mailto://dlegissupport@coned.com"
+    }    
+    
+]

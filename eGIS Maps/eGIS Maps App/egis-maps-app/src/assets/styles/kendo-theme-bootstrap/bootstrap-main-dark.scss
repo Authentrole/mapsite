@@ -1,0 +1,67 @@
+$kendo-is-dark-theme: true;
+$kendo-color-primary: #0d6efd;
+$kendo-color-secondary: #6c757d;
+$kendo-color-info: #0dcaf0;
+$kendo-color-success: #198754;
+$kendo-color-warning: #ffc107;
+$kendo-color-error: #dc3545;
+$kendo-body-text: #ffffff;
+$kendo-body-bg: #343a40;
+$kendo-color-dark-bg:#454d55;
+$kendo-appbar-dark-bg:#343a40;
+$kendo-subtle-text: #cccccc;
+$kendo-disabled-text: #aaaaaa;
+$kendo-component-text: #ffffff;
+$kendo-component-bg: #343a40;
+$kendo-base-text: #ffffff;
+$kendo-base-bg:#343a40;// #212529;
+$kendo-hover-text: #ffffff;
+$kendo-hover-bg: #343a40;
+$kendo-selected-text: #ffffff;
+$kendo-selected-bg: #0d6efd;
+$kendo-button-text: #ffffff;
+$kendo-button-bg: #343a40;
+$kendo-link-text: lightcyan ;// #0d6efd;
+$kendo-link-hover-text: #0a58ca;
+$kendo-series-a: #0d6efd;
+$kendo-series-b: #6f42c1;
+$kendo-series-c: #20c997;
+$kendo-series-d: #198754;
+$kendo-series-e: #ffc107;
+$kendo-series-f: #dc3545;
+$primary: $kendo-color-primary;
+
+.a-link{
+    color:lightcyan !important;
+}
+.pdf-input{
+    background-color: #343a40;
+    border-radius: 10px;
+    color: #ffffff;
+}
+
+.k-window{
+    background-color: #343a40;
+}
+
+.k-window-titlebar{
+    background-color: #343a40 !important;
+    color: #ffffff  !important;
+}
+
+.k-window-content{
+    background-color: #343a40 !important;
+}
+
+.k-expander-title{
+    color: #ffffff  !important;
+}
+
+.header-bg{
+    // background-color: #343a40;
+     color:white !important;
+    background-color: #020296 !important;
+}
+
+@import "all.scss";
+

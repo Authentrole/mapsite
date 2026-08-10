@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>eGIS Maps - AI Search (Client Preview)</title>
+<style>
+  :root{
+    --coned-blue:#0d3b8c;
+    --coned-blue-dark:#0a2c6b;
+    --link-blue:#1a56b0;
+    --border:#d7dbe2;
+    --bg:#f4f5f7;
+    --text-dark:#1f2430;
+    --text-muted:#5b6270;
+    --pink-tag:#c8175d;
+    --green:#2fa84f;
+  }
+  *{box-sizing:border-box;}
+  html, body{
+    margin:0;
+    width:100%;
+    height:100%;
+    font-family:"Segoe UI",Arial,Helvetica,sans-serif;
+    background:var(--bg);
+    color:var(--text-dark);
+  }
+  .app-frame{
+    width:100%;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    background:#fff;
+  }
+  #homeModule{
+    display:flex;
+    flex-direction:column;
+    flex:1;
+  }
+
+  /* ---------- Preview ribbon ---------- */
+  .preview-ribbon{
+    background:#1f2430;
+    color:#fff;
+    font-size:11.5px;
+    text-align:center;
+    padding:5px 0;
+    letter-spacing:.3px;
+  }
+  .preview-ribbon strong{color:#7ec4ef;}
+
+  /* ---------- Blue header bar ---------- */
+  header.app-header{
+    background:var(--coned-blue);
+    color:#fff;
+    padding:6px 20px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+    min-height:48px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:20px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .brand .con{color:#fff;}
+  .brand .egis{color:#7ec4ef;font-weight:700;}
+  .brand .maps{font-weight:700;font-size:19px;}
+
+  .header-tabs{display:flex;gap:8px;}
+  .header-tab-btn{
+    padding:5px 18px;
+    border-radius:14px;
+    font-size:12.5px;
+    font-weight:700;
+    border:none;
+    background:transparent;
+    color:#fff;
+    cursor:default;
+  }
+  .header-tab-btn.active{background:#fff;color:var(--coned-blue);}
+  .header-tab-btn.inactive-underline{text-decoration:underline;}
+
+  .header-search{
+    flex:1;
+    max-width:520px;
+    display:flex;
+    align-items:center;
+    background:#fff;
+    border-radius:20px;
+    padding:6px 8px 6px 16px;
+    gap:8px;
+  }
+  .header-search input{
+    flex:1;
+    border:none;
+    outline:none;
+    font-size:13px;
+    color:var(--text-dark);
+    background:transparent;
+  }
+  .header-search .icon-btn{
+    background:none;
+    border:none;
+    color:var(--text-muted);
+    cursor:pointer;
+    font-size:14px;
+    padding:4px 6px;
+  }
+  .header-search .ai-icon-btn{
+    background:var(--coned-blue);
+    color:#fff;
+    border:none;
+    border-radius:14px;
+    padding:5px 10px;
+    font-size:11px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .header-spacer{flex:1;}
+  .header-icons{display:flex;gap:16px;font-size:15px;align-items:center;}
+  .header-icons span{opacity:0.9;cursor:default;}
+
+  /* ---------- Home module ---------- */
+  .search-and-links-row{
+    display:flex;
+    align-items:flex-start;
+    padding:14px 20px;
+    background:#fff;
+    border-bottom:1px solid var(--border);
+    gap:20px;
+  }
+  .search-fields{
+    display:flex;
+    align-items:flex-end;
+    gap:16px;
+    flex-wrap:wrap;
+    flex:1 1 60%;
+  }
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{
+    font-size:11px;
+    color:var(--text-muted);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+  }
+  .field select, .field input[type="text"]{
+    padding:7px 10px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    font-size:13px;
+    min-width:140px;
+    background:#fff;
+  }
+  .go-btn{
+    background:var(--coned-blue);
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    padding:8px 14px;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .global-search-toggle{
+    display:flex;
+    align-items:center;
+    padding:2px 3px;
+    border-radius:12px;
+    background:#e7eaf0;
+    width:52px;
+    height:24px;
+  }
+  .global-search-toggle .knob{
+    width:18px;height:18px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.3);
+    margin-left:2px;
+  }
+  .row-divider{width:1px;align-self:stretch;background:var(--border);}
+  .quicklinks{
+    display:flex;
+    flex-direction:column;
+    flex-wrap:wrap;
+    gap:10px 26px;
+    max-height:70px;
+    font-size:13px;
+    color:var(--link-blue);
+  }
+  .quicklinks a{color:var(--link-blue);text-decoration:none;}
+  .quicklinks a::before{content:"\1F517\00a0";font-size:11px;}
+
+  .notifications-strip{
+    background:#eef1f5;
+    border-bottom:1px solid var(--border);
+    padding:10px 20px;
+    font-size:13px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  .main-body{display:flex;background:var(--bg);flex:1;}
+  .sidebar{
+    width:220px;
+    padding:16px;
+    font-size:12px;
+    color:var(--text-muted);
+    border-right:1px solid var(--border);
+    background:#fff;
+    align-self:stretch;
+  }
+  .sidebar h4{margin:0 0 8px;font-size:13px;color:var(--text-dark);}
+  .policy-link{color:var(--link-blue);text-decoration:underline;font-size:12px;}
+  .sidebar-logo{display:flex;align-items:center;gap:6px;margin-top:10px;}
+  .sidebar-logo .dot{width:16px;height:16px;border-radius:50%;background:var(--coned-blue);}
+  .sidebar-logo span{font-weight:600;color:var(--coned-blue);font-size:12px;}
+  .content{
+    flex:1;
+    padding:16px 20px;
+    background:var(--bg);
+    align-self:stretch;
+  }
+  .notif-header{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-weight:600;
+    font-size:14px;
+    margin-bottom:10px;
+  }
+  .maps-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+  .region-col h5{
+    background:var(--coned-blue);
+    color:#fff;
+    margin:0;
+    padding:8px 10px;
+    font-size:12px;
+    border-radius:4px 4px 0 0;
+  }
+  .region-col ul{
+    list-style:none;
+    margin:0;
+    padding:8px 10px;
+    border:1px solid var(--border);
+    border-top:none;
+    font-size:11.5px;
+    line-height:1.9;
+    background:#fff;
+  }
+  .region-col a{color:var(--link-blue);text-decoration:none;}
+
+  footer{
+    padding:10px 20px;
+    font-size:11px;
+    color:var(--text-muted);
+    background:#fff;
+    border-top:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+  }
+
+  /* ---------- AI Search module (full page) ---------- */
+  #aiSearchModule{
+    display:none;
+    flex-direction:column;
+    flex:1;
+  }
+  .ai-module-topbar{
+    background:#eef3fb;
+    border-bottom:1px solid var(--border);
+    padding:10px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:13px;
+  }
+  .ai-module-topbar .path{color:var(--text-muted);}
+  .ai-module-topbar .path strong{color:var(--coned-blue);}
+  .back-btn{
+    background:#fff;
+    border:1px solid var(--coned-blue);
+    color:var(--coned-blue);
+    border-radius:16px;
+    padding:6px 16px;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .chat-body-row{flex:1;display:flex;overflow:hidden;}
+  .chat-thread{flex:1;padding:20px 24px;overflow-y:auto;max-width:760px;margin:0 auto;width:100%;}
+
+  .example-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:18px;
+  }
+  .example-chip{
+    background:#eef3fb;
+    border:1px solid var(--border);
+    color:var(--coned-blue);
+    border-radius:16px;
+    padding:6px 14px;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .example-chip:hover{background:#dde9fb;}
+
+  .chat-bubble-user{
+    background:var(--coned-blue);
+    color:#fff;
+    padding:12px 16px;
+    border-radius:12px 12px 2px 12px;
+    max-width:70%;
+    margin-left:auto;
+    font-size:13.5px;
+    margin-bottom:6px;
+  }
+  .timestamp{
+    font-size:10.5px;
+    color:var(--text-muted);
+    text-align:right;
+    margin-bottom:18px;
+  }
+  .chat-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 18px;
+    max-width:92%;
+    margin-bottom:8px;
+  }
+  .chat-card.busy{display:flex;align-items:center;gap:10px;}
+  .spinner{
+    width:16px;height:16px;border-radius:50%;
+    border:2px solid #d7dbe2;border-top-color:var(--coned-blue);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .assistant-label{
+    font-weight:600;
+    font-size:13px;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .assistant-label .dotcircle{
+    width:20px;height:20px;border-radius:50%;
+    background:var(--coned-blue);color:#fff;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:700;
+  }
+  .retrieval-badge{
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+    padding:2px 8px;
+    border-radius:10px;
+    background:#e4f5e9;
+    color:var(--green);
+  }
+  .retrieval-badge.rejected{
+    background:#f1f2f4;
+    color:var(--text-muted);
+  }
+  .chat-card p{font-size:13px;line-height:1.6;color:var(--text-dark);margin:0 0 10px;}
+  .sources-label{font-size:12.5px;font-weight:600;margin:10px 0 4px;}
+
+  .sources-panel-inline{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px solid var(--border);
+  }
+  .sources-panel-inline h5{
+    font-size:12px;
+    margin:0 0 8px;
+    color:var(--text-muted);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-weight:600;
+  }
+  .sources-url-list{
+    margin:0;
+    padding:0;
+    list-style:none;
+  }
+  .sources-url-list li{
+    padding:6px 0;
+    border-bottom:1px solid #eef0f3;
+    font-size:12.5px;
+  }
+  .sources-url-list li:last-child{border-bottom:none;}
+  .source-link{
+    color:var(--link-blue);
+    text-decoration:underline;
+    font-size:12.5px;
+    word-break:break-all;
+  }
+  .source-link:hover{color:var(--coned-blue-dark);}
+  .source-meta{
+    display:block;
+    color:var(--text-muted);
+    font-size:11px;
+    margin-top:2px;
+  }
+
+  .feedback-row{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:6px;
+    margin-top:12px;
+  }
+  .feedback-btn{
+    background:none;
+    border:1px solid var(--border);
+    border-radius:6px;
+    width:28px;
+    height:28px;
+    font-size:13px;
+    cursor:pointer;
+    color:var(--text-muted);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .feedback-btn:hover{background:#f2f4f7;}
+  .feedback-btn.active-up{background:#e4f5e9;border-color:var(--green);color:var(--green);}
+  .feedback-btn.active-down{background:#fdecec;border-color:#d9534f;color:#d9534f;}
+
+  .chat-input-row{
+    border-top:1px solid var(--border);
+    padding:12px 18px;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    background:#fff;
+  }
+  .chat-input-row input{
+    flex:1;
+    padding:9px 14px;
+    border:1px solid var(--border);
+    border-radius:20px;
+    font-size:13px;
+    outline:none;
+  }
+  .chat-input-row button{
+    background:var(--coned-blue);
+    color:#fff;
+    border:none;
+    padding:9px 20px;
+    border-radius:16px;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .disclaimer{
+    text-align:center;
+    font-size:10.5px;
+    color:var(--text-muted);
+    padding:8px 0;
+    background:#fff;
+  }
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:#1f2430;
+    color:#fff;
+    padding:10px 18px;
+    border-radius:6px;
+    font-size:12.5px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+    opacity:0;
+    transition:opacity .2s ease, transform .2s ease;
+    pointer-events:none;
+    z-index:999;
+    max-width:80%;
+    text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="app-frame">
+  <div class="preview-ribbon">CLIENT PREVIEW &mdash; <strong>eGIS Maps AI Search</strong> &middot; illustrative sample data, not connected to a live map index</div>
+
+  <header class="app-header">
+    <div class="brand">
+      <span class="con">con</span><span>Edison</span>
+      <span style="font-size:16px;">&#128506;</span>
+      <span class="egis">eGIS</span><span class="maps">&nbsp;Maps</span>
+    </div>
+
+    <div class="header-tabs">
+      <button class="header-tab-btn active">Electric</button>
+      <button class="header-tab-btn inactive-underline">Gas</button>
+      <button class="header-tab-btn inactive-underline">Steam</button>
+    </div>
+
+    <div class="header-search" id="headerSearch">
+      <span>&#128269;</span>
+      <input id="aiInput" type="text" placeholder="Ask AI Search, e.g. 'Show me the Bronx feeder map'">
+      <button class="icon-btn" title="Voice search">&#127908;</button>
+      <button class="ai-icon-btn" title="AI Search" onclick="openAiSearch()">AI</button>
+    </div>
+
+    <div class="header-spacer"></div>
+
+    <div class="header-icons">
+      <span>&#9673;</span><span>&#128276;</span><span>&#128337;</span><span>&#9734;</span><span>&#9993;</span>
+    </div>
+  </header>
+
+  <!-- ================= HOME MODULE ================= -->
+  <div id="homeModule">
+    <div class="search-and-links-row">
+      <div class="search-fields">
+        <div class="field">
+          <label>Global Search</label>
+          <div class="global-search-toggle"><div class="knob"></div></div>
+        </div>
+        <div class="field">
+          <label>Region</label>
+          <select>
+            <option>Bronx</option>
+            <option>Manhattan</option>
+            <option>Brooklyn & Queens</option>
+            <option>Staten Island</option>
+            <option>Westchester</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Facility</label>
+          <select>
+            <option>M&S Plate</option>
+            <option>Feeder Map</option>
+            <option>Network Map</option>
+            <option>Manhole Detail</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>PDF File Name</label>
+          <input type="text" placeholder="PDF File Name...">
+        </div>
+        <button class="go-btn">&#128269;</button>
+      </div>
+
+      <div class="row-divider"></div>
+
+      <div class="quicklinks">
+        <a href="#">eGIS Support</a><a href="#">Production Portal</a><a href="#">Reporting Portal</a>
+        <a href="#">Symbols</a><a href="#">Archived Maps</a><a href="#">eGIS Knowledge Hub</a>
+      </div>
+    </div>
+
+    <div class="notifications-strip">
+      <span>Notifications</span>
+      <span>&#9662;</span>
+    </div>
+
+    <div class="main-body">
+      <div class="sidebar">
+        <h4>Disclaimer</h4>
+        <p>Please note this eGIS application contains customer, transmission, distribution, electric, gas, and steam data assets deemed Critical Energy Infrastructure. Any party sending or receiving information from this application must be in compliance with corporate policy.</p>
+        <ul style="list-style:none;padding:0;margin:0 0 14px;">
+          <li><a href="#" class="policy-link">CEI-408</a></li>
+          <li><a href="#" class="policy-link">EOP-5108</a></li>
+          <li><a href="#" class="policy-link">G-8233</a></li>
+        </ul>
+        <div class="sidebar-logo">
+          <div class="dot"></div>
+          <span>conEdison</span>
+        </div>
+      </div>
+      <div class="content">
+        <div class="notif-header">&#9650; Electric</div>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:-4px;">For map discrepancies, contact your Regional Engineering mapping group. For enhancement requests, submit ideas to the Mapping Committee.</p>
+        <div class="maps-grid">
+          <div class="region-col">
+            <h5>Bronx & Westchester</h5>
+            <ul><li><a href="#">Bronx M&S Plate</a></li><li><a href="#">Westchester M&S Plate</a></li><li><a href="#">Bronx Feeder Map</a></li><li><a href="#">Bronx Network Map</a></li><li><a href="#">Bronx Manhole Detail</a></li></ul>
+          </div>
+          <div class="region-col">
+            <h5>Manhattan</h5>
+            <ul><li><a href="#">M&S Plate</a></li><li><a href="#">Feeder Map</a></li><li><a href="#">Vertical Detail Plate</a></li><li><a href="#">Conduit Plate</a></li><li><a href="#">Network Map</a></li></ul>
+          </div>
+          <div class="region-col">
+            <h5>Brooklyn & Queens</h5>
+            <ul><li><a href="#">Brooklyn M&S Plate</a></li><li><a href="#">Queens M&S Plate</a></li><li><a href="#">Brooklyn Feeder Map</a></li><li><a href="#">Brooklyn Network Map</a></li></ul>
+          </div>
+          <div class="region-col">
+            <h5>Staten Island</h5>
+            <ul><li><a href="#">M&S Plate</a></li><li><a href="#">C&O Plate</a></li><li><a href="#">Manhole Detail</a></li><li><a href="#">Regional Engineering</a></li></ul>
+          </div>
+          <div class="region-col">
+            <h5>General</h5>
+            <ul><li><a href="#">1000 Series</a></li><li><a href="#">Adept Layout</a></li><li><a href="#">Feeder Mapping Info</a></li><li><a href="#">ArcFM Web Links</a></li></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <span>Copyright &copy; 2024 ConEdison All rights reserved.</span>
+      <span>Rakesh Roy</span>
+    </footer>
+  </div>
+
+  <!-- ================= AI SEARCH MODULE ================= -->
+  <div id="aiSearchModule">
+    <div class="ai-module-topbar">
+      <div class="path">eGIS Maps &gt; <strong>AI Search</strong></div>
+      <button class="back-btn" onclick="closeAiSearch()">&larr; Back to Maps</button>
+    </div>
+
+    <div class="chat-body-row">
+      <div class="chat-thread" id="chatThread">
+        <div class="example-chips" id="exampleChips"></div>
+      </div>
+    </div>
+
+    <div class="chat-input-row">
+      <input id="followUpInput" type="text" placeholder="Ask a follow-up question..." onkeydown="if(event.key==='Enter'){sendFollowUp();}">
+      <button id="sendBtn" onclick="sendFollowUp()">Send</button>
+    </div>
+    <div class="disclaimer">Disclaimer: AI generated content may be incorrect. Sample data shown for illustration.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------------------------------------------------------------
+   Canned scenarios built from the real sample map plates that were
+   OCR-ingested and embedded during the phase-0 feasibility work. This
+   file makes no network calls -- it's a client-facing preview of the
+   experience, not a live connection to the search index / Gemini API.
+--------------------------------------------------------------------- */
+const SCENARIOS = [
+  {
+    key: "bronx-feeder",
+    chip: "Show me the Bronx feeder map",
+    query: "Show me the Bronx feeder map",
+    retrieval: "semantic",
+    summary: "Found 6 plates covering Bronx feeder and network routing. Central Bronx, North East Bronx, and South East Bronx are represented across three feeder plates, with Riverdale and Fordham nearby. All are classified as Electric Feeder/Network Maps and ranked by how closely their content matches “Bronx feeder.”",
+    results: [
+      { plateId: "central_bronx_4x", region: "Bronx", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.81 },
+      { plateId: "south_east_bronx_7w", region: "Bronx", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.79 },
+      { plateId: "south_east_bronx_7x", region: "Bronx", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.78 },
+      { plateId: "north_east_bronx_5x", region: "Bronx", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.76 },
+      { plateId: "west_bronx_2x", region: "Bronx", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.74 },
+      { plateId: "riverdale_1x", region: "Bronx", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.71 }
+    ]
+  },
+  {
+    key: "westchester-ossining",
+    chip: "Feeder map in Westchester near Ossining",
+    query: "Feeder map in Westchester near Ossining",
+    retrieval: "semantic",
+    summary: "Found 5 plates in Westchester with the closest match being the Ossining feeder map itself. Grasslands, Buchanan, and Cedar Street feeder plates are nearby and share overlapping service territory, so they're included for cross-reference.",
+    results: [
+      { plateId: "ossining_6w", region: "Westchester", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.87 },
+      { plateId: "grasslands_19w", region: "Westchester", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.80 },
+      { plateId: "buchanan_13w", region: "Westchester", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.78 },
+      { plateId: "cedar_street_20w", region: "Westchester", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.76 },
+      { plateId: "millwood_7w", region: "Westchester", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.73 }
+    ]
+  },
+  {
+    key: "gas-regulator",
+    chip: "Which plates are gas regulator stations?",
+    query: "Which plates are gas regulator stations?",
+    retrieval: "semantic",
+    summary: "Found 4 Gas Regulator Plates in the index. These document regulator station equipment and piping rather than electric distribution, so they're grouped separately from the feeder/network maps above.",
+    results: [
+      { plateId: "06_14j", region: "Unknown", utility: "Gas", facilityType: "Gas Regulator Plate", similarity: 0.84 },
+      { plateId: "102_15ur", region: "Unknown", utility: "Gas", facilityType: "Gas Regulator Plate", similarity: 0.81 },
+      { plateId: "107_21sr", region: "Unknown", utility: "Gas", facilityType: "Gas Regulator Plate", similarity: 0.80 },
+      { plateId: "10_14n", region: "Unknown", utility: "Gas", facilityType: "Gas Regulator Plate", similarity: 0.78 }
+    ]
+  },
+  {
+    key: "plate-10ab",
+    chip: "Open plate 10-AB",
+    query: "Open plate 10-AB",
+    retrieval: "keyword",
+    summary: "Matched plate 10-AB directly by ID (exact match), an M&S Plate. Nearby plates 10-A, 10-N, and 11-AD are included since they're commonly referenced together in this grid area.",
+    results: [
+      { plateId: "10-AB", region: "Unknown", utility: "Electric", facilityType: "M&S Plate", similarity: 1.0 },
+      { plateId: "10-A", region: "Unknown", utility: "Electric", facilityType: "M&S Plate", similarity: 0.69 },
+      { plateId: "10-N", region: "Unknown", utility: "Electric", facilityType: "M&S Plate", similarity: 0.65 },
+      { plateId: "11-AD", region: "Unknown", utility: "Electric", facilityType: "M&S Plate", similarity: 0.61 }
+    ]
+  },
+  {
+    key: "dewey-avenue",
+    chip: "Find maps referencing Dewey Avenue",
+    query: "Find maps referencing Dewey Avenue",
+    retrieval: "semantic",
+    summary: "Found 6 plates referencing Dewey Avenue, spanning Westchester and the Bronx. Cedar Street, Washington Street, and Elmsford feeder plates in Westchester, plus both South East Bronx feeder plates, mention the street directly; plate 10-AB is included as the closest overall match.",
+    results: [
+      { plateId: "10-AB", region: "Unknown", utility: "Electric", facilityType: "M&S Plate", similarity: 0.59 },
+      { plateId: "cedar_street_20w", region: "Westchester", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.57 },
+      { plateId: "washington_st_1w_9w", region: "Westchester", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.57 },
+      { plateId: "south_east_bronx_7w", region: "Bronx", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.57 },
+      { plateId: "south_east_bronx_7x", region: "Bronx", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.57 },
+      { plateId: "elmsford_12w", region: "Westchester", utility: "Electric", facilityType: "Feeder/Network Map", similarity: 0.56 }
+    ]
+  },
+  {
+    key: "messi",
+    chip: "Who is Lionel Messi?",
+    query: "Who is Lionel Messi?",
+    retrieval: "rejected",
+    summary: "I'm the eGIS Maps AI Assistant -- I can only help you find Con Edison map plates (feeder maps, M&S plates, gas regulator plates, manhole details, etc.) by region, facility type, plate ID, or street/location name. That question doesn't look related to map search, so I can't help with it here.",
+    results: []
+  },
+  {
+    key: "france",
+    chip: "What's the capital of France?",
+    query: "What's the capital of France?",
+    retrieval: "rejected",
+    summary: "I'm the eGIS Maps AI Assistant -- I can only help you find Con Edison map plates (feeder maps, M&S plates, gas regulator plates, manhole details, etc.) by region, facility type, plate ID, or street/location name. That question doesn't look related to map search, so I can't help with it here.",
+    results: []
+  }
+];
+
+const FALLBACK_SUMMARY = "This is a preview build with a fixed set of sample questions. Try one of the suggestions below to see how AI Search responds with real sample map plates, source citations, and similarity ranking.";
+
+function timeNow(){
+  return new Date().toLocaleString('en-US', { month:'numeric', day:'numeric', year:'2-digit', hour:'numeric', minute:'2-digit' });
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function renderExampleChips(){
+  const container = document.getElementById('exampleChips');
+  container.innerHTML = '';
+  SCENARIOS.forEach(function(s){
+    const chip = document.createElement('div');
+    chip.className = 'example-chip';
+    chip.textContent = s.chip;
+    chip.onclick = function(){ ask(s.query); };
+    container.appendChild(chip);
+  });
+}
+
+function startNewChat(){
+  const thread = document.getElementById('chatThread');
+  thread.innerHTML = '';
+  const chips = document.createElement('div');
+  chips.className = 'example-chips';
+  chips.id = 'exampleChips';
+  thread.appendChild(chips);
+  renderExampleChips();
+  document.getElementById('followUpInput').value = '';
+}
+
+function openAiSearch(){
+  const val = document.getElementById('aiInput').value.trim();
+  document.getElementById('homeModule').style.display = 'none';
+  document.getElementById('aiSearchModule').style.display = 'flex';
+  document.getElementById('aiInput').value = '';
+
+  // A query from the top search bar always starts a fresh conversation.
+  startNewChat();
+  if (val.length > 0) {
+    ask(val);
+  }
+}
+
+function closeAiSearch(){
+  document.getElementById('aiSearchModule').style.display = 'none';
+  document.getElementById('homeModule').style.display = 'flex';
+}
+
+document.getElementById('aiInput').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') { openAiSearch(); }
+});
+
+function sendFollowUp(){
+  const input = document.getElementById('followUpInput');
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = '';
+  ask(val);
+}
+
+function appendUserBubble(text){
+  const thread = document.getElementById('chatThread');
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble-user';
+  bubble.textContent = text;
+  thread.appendChild(bubble);
+
+  const ts = document.createElement('div');
+  ts.className = 'timestamp';
+  ts.textContent = timeNow();
+  thread.appendChild(ts);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function appendBusyCard(){
+  const thread = document.getElementById('chatThread');
+  const card = document.createElement('div');
+  card.className = 'chat-card busy';
+  card.id = 'busyCard';
+  card.innerHTML = '<span class="dotcircle">AI</span><div class="spinner"></div><span style="font-size:12.5px;color:var(--text-muted);">Searching map plates...</span>';
+  thread.appendChild(card);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function removeBusyCard(){
+  const el = document.getElementById('busyCard');
+  if (el) el.remove();
+}
+
+function appendAssistantCard(scenario){
+  const thread = document.getElementById('chatThread');
+  const card = document.createElement('div');
+  card.className = 'chat-card';
+
+  const label = document.createElement('div');
+  label.className = 'assistant-label';
+  let badge = '';
+  if (scenario && scenario.retrieval === 'rejected') {
+    badge = '<span class="retrieval-badge rejected">out of scope</span>';
+  } else if (scenario) {
+    badge = '<span class="retrieval-badge">' + scenario.retrieval + ' retrieval</span>';
+  }
+  label.innerHTML = '<span class="dotcircle">AI</span> eGIS AI Assistant' + badge;
+  card.appendChild(label);
+
+  const p = document.createElement('p');
+  p.textContent = scenario ? scenario.summary : FALLBACK_SUMMARY;
+  card.appendChild(p);
+
+  if (scenario && scenario.results && scenario.results.length > 0) {
+    card.appendChild(buildInlineSources(scenario.results));
+  }
+
+  card.appendChild(buildFeedbackRow());
+
+  thread.appendChild(card);
+
+  const ts = document.createElement('div');
+  ts.className = 'timestamp';
+  ts.textContent = timeNow();
+  thread.appendChild(ts);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function buildInlineSources(results){
+  const wrap = document.createElement('div');
+  wrap.className = 'sources-panel-inline';
+  wrap.innerHTML = '<h5>&#128196; Data Sources &middot; ' + results.length + ' plate(s) found</h5>';
+
+  const list = document.createElement('ul');
+  list.className = 'sources-url-list';
+  results.forEach(function(plate){
+    const li = document.createElement('li');
+    const url = 'https://maps.conedison.net/pdf/' + encodeURIComponent(plate.plateId) + '.pdf';
+    const link = document.createElement('a');
+    link.className = 'source-link';
+    link.href = url;
+    link.textContent = url;
+    link.addEventListener('click', function(e){
+      e.preventDefault();
+      showToast('In the connected app, this opens ' + plate.plateId + '.pdf directly from the eGIS map archive.');
+    });
+    li.appendChild(link);
+
+    const meta = document.createElement('span');
+    meta.className = 'source-meta';
+    meta.textContent = plate.region + ' · ' + plate.utility + ' · ' + plate.facilityType +
+      ' · match ' + Math.round(plate.similarity * 100) + '%';
+    li.appendChild(meta);
+
+    list.appendChild(li);
+  });
+  wrap.appendChild(list);
+  return wrap;
+}
+
+function buildFeedbackRow(){
+  const row = document.createElement('div');
+  row.className = 'feedback-row';
+
+  const up = document.createElement('button');
+  up.className = 'feedback-btn';
+  up.title = 'Good response';
+  up.innerHTML = '&#128077;';
+
+  const down = document.createElement('button');
+  down.className = 'feedback-btn';
+  down.title = 'Not helpful';
+  down.innerHTML = '&#128078;';
+
+  up.addEventListener('click', function(){
+    up.classList.add('active-up');
+    down.classList.remove('active-down');
+    showToast('Thanks for the feedback!');
+  });
+  down.addEventListener('click', function(){
+    down.classList.add('active-down');
+    up.classList.remove('active-up');
+    showToast('Thanks — we\'ll use this to improve AI Search.');
+  });
+
+  row.appendChild(up);
+  row.appendChild(down);
+  return row;
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+function findScenario(query){
+  const q = query.trim().toLowerCase();
+  let match = SCENARIOS.find(s => s.query.toLowerCase() === q);
+  if (match) return match;
+  return SCENARIOS.find(s => q.includes(s.key.split('-')[0]) || s.chip.toLowerCase().includes(q));
+}
+
+function ask(query){
+  appendUserBubble(query);
+  appendBusyCard();
+
+  setTimeout(function(){
+    removeBusyCard();
+    const scenario = findScenario(query);
+    appendAssistantCard(scenario);
+  }, 700);
+}
+
+renderExampleChips();
+</script>
+
+</body>
+</html>

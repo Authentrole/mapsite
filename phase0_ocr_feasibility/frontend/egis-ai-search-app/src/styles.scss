@@ -1,0 +1,40 @@
+/* Kendo theme is loaded via angular.json's "styles" array (node_modules/@progress/kendo-theme-default). */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family:
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Noto Sans',
+    'Liberation Sans',
+    sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

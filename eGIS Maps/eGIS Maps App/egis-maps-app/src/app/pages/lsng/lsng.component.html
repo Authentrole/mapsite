@@ -1,0 +1,49 @@
+<kendo-appbar class="header-bg" position="top" [themeColor]="this.coreService.theme" style="padding-block: unset;height: 3rem;">
+            
+    <kendo-appbar-section class="logo-items">
+        <img class="logo" src="assets/img/logo.svg" alt="ConEdison">
+        <img class="app-logo" src="assets/img/eGIS_Logo.png" alt="eGIS">
+    </kendo-appbar-section>
+    <kendo-appbar-section>
+        <span class="title">Maps{{appEnv}}</span>
+    </kendo-appbar-section>           
+    <kendo-appbar-spacer width="15vw"></kendo-appbar-spacer>               
+    <kendo-appbar-section>
+        <span style="font-size: 1.25rem;">Layout Number Generator</span>
+    </kendo-appbar-section>
+    <kendo-appbar-spacer></kendo-appbar-spacer> 
+    <kendo-appbar-section >
+        <button kendoButton class="buttonIcon" title="Toggle Dark Mode" iconClass="fa fa-adjust" (click)="ToggleDark();"></button>
+    </kendo-appbar-section>        
+</kendo-appbar>
+
+<kendo-card class="content">
+    <!-- <kendo-card-header>
+        <span style="font-size: 1.5rem;font-weight: 500;">Layout Sequence Number Generator</span>
+    </kendo-card-header> -->
+    <kendo-card-body style="display: inline-flex; width: 100%;padding:0;">
+        <kendo-tabstrip [keepTabContent]="true" (tabSelect)="onTabSelect($event)"
+            style="width: 100%;" #tabstrip>
+            <kendo-tabstrip-tab [selected]="true" title="Layout Number Generator" 
+                [closable]="false">
+                <ng-template kendoTabContent>
+                    <!-- @if (isTabActive(0)) { -->
+                    <!-- <div style="width: 100%;"> -->
+                        <app-lng-detail #lsngDetail style="width: 100%;" [SelectedLayout]="selectedLayout"></app-lng-detail>
+                    <!-- </div> -->    
+                    <!-- }           -->
+                </ng-template>
+            </kendo-tabstrip-tab>  
+            <kendo-tabstrip-tab title="History" [closable]="false">
+                <ng-template kendoTabContent>
+                    @if (isTabActive(1)) {
+                        <div style="width: 100%;">
+                            <app-lng-history style="width: 100%;" (editLayout)="loadLayoutData($event)"></app-lng-history>
+                        </div>         
+                    }           
+                </ng-template>     
+            </kendo-tabstrip-tab>   
+        </kendo-tabstrip>         
+    </kendo-card-body>
+</kendo-card>
+

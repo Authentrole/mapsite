@@ -1,0 +1,96 @@
+<div style="display: inline-flexbox;" kendoPopoverContainer [popover]="info" filter=".popup" class="wrapper"
+  #container="kendoPopoverContainer">
+  <kendo-appbar class="header-bg" position="top" style="z-index:1000;" positionMode="fixed"
+    [themeColor]="this.coreService.theme">
+    <!-- <kendo-appbar-section *ngIf="showTools">
+      <button kendoButton title="Toggle Disclaimer" (click)="ToggleSideNav();">
+        <kendo-svg-icon style="color:white;" [icon]="menuIcon"></kendo-svg-icon>
+      </button>
+    </kendo-appbar-section> -->
+    <kendo-appbar-section class="logo-items">
+      <img class="logo" src="assets/img/logo.svg" alt="ConEdison">
+      <img class="app-logo" src="assets/img/eGIS_Logo.png" alt="eGIS">
+    </kendo-appbar-section>
+    <kendo-appbar-section>
+      <span class="title">Maps{{appEnv}}</span>
+    </kendo-appbar-section>
+    <kendo-appbar-spacer width="20vw"></kendo-appbar-spacer>
+    <kendo-appbar-section *ngIf="showTools">
+      <ul>
+        @for(component of components; track component; let i = $index) {
+        <li>
+          <button [ngClass]="{'button-inactive': !buttonState[component]}" kendoButton size="small" fillMode="solid"
+            themeColor="primary" (click)="showComponent(component)"><span
+              class="k-font-bold">{{component}}</span></button>
+        </li>
+        }
+      </ul>
+    </kendo-appbar-section>
+
+    <kendo-appbar-section *ngIf="showTools" class="ai-search-header-section">
+      <div class="ai-search-box">
+        <span class="fas fa-search"></span>
+        <input class="ai-search-input" autocomplete="off" type="text"
+          placeholder="Ask AI Search, e.g. 'Show me the Bronx feeder map'"
+          [(ngModel)]="aiQuery" (keypress)="aiSearchKeyPress($event)">
+        <button kendoButton class="ai-go-btn" fillMode="solid" themeColor="primary" title="AI Search"
+          (click)="triggerAiSearch()">AI</button>
+      </div>
+    </kendo-appbar-section>
+
+    <kendo-appbar-spacer></kendo-appbar-spacer>
+
+    <!-- <kendo-appbar-section>
+
+      </kendo-appbar-section> -->
+    <kendo-appbar-section>
+      <button kendoButton class="buttonIcon" title="Toggle Dark Mode" iconClass="fa fa-adjust" (click)="ToggleDark();">
+      </button>
+      @if(showTools){
+        <div>
+          <button kendoButton class="buttonIcon" [title]="outagesTooltip" [iconClass]="notificationIcon"
+            (click)="ToggleOutages();">
+          </button>
+          <!-- Recent Panel -->
+          <button kendoButton #recentPanel class="buttonIcon popup" title="Recent Pages"
+            iconClass="fa-regular far fa-clock" (click)="togglePopup($event);">
+          </button>
+          <button kendoButton #favPanel class="buttonIcon popup" title="Favorites" iconClass="far fa-star"
+            (click)="togglePopup($event)">
+          </button>
+          <button kendoButton class="buttonIcon" title="Contact Egis Support" iconClass="fas fa-envelope"
+            (click)="openContactSupport();">
+          </button>
+        </div>
+      }
+    </kendo-appbar-section>
+  </kendo-appbar>
+
+  <kendo-popover #info width="100%" position="bottom" [callout]="false">
+    <ng-template kendoPopoverBodyTemplate>
+      <kendo-card style="width: 100% !important;">
+        <kendo-card-body style="height: 25vh; overflow: auto;padding:0px !important;">
+          <div style="border-bottom: 1px solid #7a7a7a;text-align: center;font-size: 0.85rem;">{{popUpTitle |
+            titlecase}}</div>
+          @for(item of popupData; track item.name) {
+          <div style="border-bottom: 1px solid #7a7a7a; cursor: pointer;" class="list-content"
+            [class.isActiveContent]="item['isActive']" (click)="openRecentPDF(item)">
+            <span class="li-span">{{item.commodity + '>' + item.groupName + '>' + item.name }}</span>
+          </div>
+          }
+        </kendo-card-body>
+      </kendo-card>
+    </ng-template>
+  </kendo-popover>
+
+  <!-- <app-sub-header *ngIf="showTools"></app-sub-header> -->
+</div>
+
+<!-- <app-loading-indicator [type]="loaderType" [size]="loaderSize" [isLoading]="isLoading"></app-loading-indicator> -->
+<!-- <ng-template #windowTitleBar let-win>
+  <span class="k-window-title">ConEdison Facility Map</span>
+  <button kendoWindowRestoreAction [window]="win"></button>
+  <button kendoWindowMaximizeAction [window]="win"></button>
+  <button kendoWindowCloseAction [window]="win"></button>
+</ng-template>
+<div kendoDialogContainer></div> -->

@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>eGIS Maps - AI Search Demo</title>
+<style>
+  :root{
+    --coned-blue:#0d3b8c;
+    --coned-blue-dark:#0a2c6b;
+    --link-blue:#1a56b0;
+    --border:#d7dbe2;
+    --bg:#f4f5f7;
+    --panel-bg:#ffffff;
+    --text-dark:#1f2430;
+    --text-muted:#5b6270;
+    --pink-tag:#c8175d;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Segoe UI",Arial,Helvetica,sans-serif;
+    background:var(--bg);
+    color:var(--text-dark);
+  }
+  html, body{
+    width:100%;
+    height:100%;
+  }
+  .app-frame{
+    width:100%;
+    min-height:100vh;
+    margin:0;
+    border:none;
+    border-radius:0;
+    overflow:visible;
+    box-shadow:none;
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+  }
+  #homeModule{
+    display:flex;
+    flex-direction:column;
+    flex:1;
+  }
+
+  /* ---------- Blue header bar (search bar lives here) ---------- */
+  header.app-header{
+    background:var(--coned-blue);
+    color:#fff;
+    padding:6px 20px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+    min-height:48px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:20px;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .brand img.logo{height:26px;}
+  .brand img.app-logo{height:32px;margin-top:2px;}
+  .brand .maps{font-weight:700;font-size:19px;}
+
+  .header-tabs{
+    display:flex;
+    gap:8px;
+  }
+  .header-tab-btn{
+    padding:5px 18px;
+    border-radius:14px;
+    font-size:12.5px;
+    font-weight:700;
+    border:none;
+    background:transparent;
+    color:#fff;
+    cursor:default;
+  }
+  .header-tab-btn.active{
+    background:#fff;
+    color:var(--coned-blue);
+  }
+  .header-tab-btn.inactive-underline{
+    text-decoration:underline;
+  }
+
+  .header-search{
+    flex:1;
+    max-width:520px;
+    display:flex;
+    align-items:center;
+    background:#fff;
+    border-radius:20px;
+    padding:6px 8px 6px 16px;
+    gap:8px;
+  }
+  .header-search input{
+    flex:1;
+    border:none;
+    outline:none;
+    font-size:13px;
+    color:var(--text-dark);
+    background:transparent;
+  }
+  .header-search .icon-btn{
+    background:none;
+    border:none;
+    color:var(--text-muted);
+    cursor:pointer;
+    font-size:14px;
+    padding:4px 6px;
+  }
+  .header-search .ai-icon-btn{
+    background:var(--coned-blue);
+    color:#fff;
+    border:none;
+    border-radius:14px;
+    padding:5px 10px;
+    font-size:11px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .header-spacer{flex:1;}
+
+  .header-icons{
+    display:flex;
+    gap:16px;
+    font-size:15px;
+    align-items:center;
+  }
+  .header-icons span{opacity:0.9;cursor:default;}
+
+  .config-bar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:6px 20px;
+    background:#fff3cd;
+    border-bottom:1px solid #f0c36d;
+    font-size:11.5px;
+    color:#6b5100;
+  }
+  .config-bar input{
+    font-size:11.5px;
+    padding:3px 6px;
+    border:1px solid #d7c290;
+    border-radius:4px;
+    width:220px;
+  }
+  .config-bar button{
+    font-size:11px;
+    padding:3px 10px;
+    border-radius:4px;
+    border:1px solid var(--coned-blue);
+    background:#fff;
+    color:var(--coned-blue);
+    cursor:pointer;
+  }
+  .status-dot{width:8px;height:8px;border-radius:50%;background:#999;display:inline-block;}
+  .status-dot.ok{background:#2fa84f;}
+  .status-dot.bad{background:#d9534f;}
+
+  /* ---------- Home module (unchanged below the blue bar) ---------- */
+  .search-and-links-row{
+    display:flex;
+    align-items:flex-start;
+    padding:14px 20px;
+    background:#fff;
+    border-bottom:1px solid var(--border);
+    gap:20px;
+  }
+  .search-fields{
+    display:flex;
+    align-items:flex-end;
+    gap:16px;
+    flex-wrap:wrap;
+    flex:1 1 60%;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .field label{
+    font-size:11px;
+    color:var(--text-muted);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+  }
+  .field select, .field input[type="text"]{
+    padding:7px 10px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    font-size:13px;
+    min-width:140px;
+    background:#fff;
+  }
+  .go-btn{
+    background:var(--coned-blue);
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    padding:8px 14px;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .global-search-toggle{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:2px 3px;
+    border-radius:12px;
+    background:#e7eaf0;
+    width:52px;
+    height:24px;
+    cursor:default;
+  }
+  .global-search-toggle .knob{
+    width:18px;height:18px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.3);
+    margin-left:2px;
+  }
+
+  .row-divider{
+    width:1px;
+    align-self:stretch;
+    background:var(--border);
+  }
+
+  .quicklinks{
+    display:flex;
+    flex-direction:column;
+    flex-wrap:wrap;
+    gap:10px 26px;
+    max-height:70px;
+    font-size:13px;
+    color:var(--link-blue);
+  }
+  .quicklinks a{color:var(--link-blue);text-decoration:none;}
+  .quicklinks a::before{content:"\1F517\00a0";font-size:11px;}
+
+  .notifications-strip{
+    background:#eef1f5;
+    border-bottom:1px solid var(--border);
+    padding:10px 20px;
+    font-size:13px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  .main-body{display:flex;background:var(--bg);flex:1;}
+  .sidebar{
+    width:220px;
+    padding:16px;
+    font-size:12px;
+    color:var(--text-muted);
+    border-right:1px solid var(--border);
+    background:#fff;
+    align-self:stretch;
+  }
+  .sidebar h4{margin:0 0 8px;font-size:13px;color:var(--text-dark);}
+  .policy-link{color:var(--link-blue);text-decoration:underline;font-size:12px;}
+  .sidebar-logo{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-top:10px;
+  }
+  .sidebar-logo img{height:18px;}
+  .sidebar-logo span{font-weight:600;color:var(--coned-blue);font-size:12px;}
+  .content{
+    flex:1;
+    padding:16px 20px;
+    background:var(--bg);
+    align-self:stretch;
+  }
+  .notif-header{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-weight:600;
+    font-size:14px;
+    margin-bottom:10px;
+  }
+  .maps-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:14px;
+  }
+  .region-col h5{
+    background:var(--coned-blue);
+    color:#fff;
+    margin:0;
+    padding:8px 10px;
+    font-size:12px;
+    border-radius:4px 4px 0 0;
+  }
+  .region-col ul{
+    list-style:none;
+    margin:0;
+    padding:8px 10px;
+    border:1px solid var(--border);
+    border-top:none;
+    font-size:11.5px;
+    line-height:1.9;
+    background:#fff;
+  }
+  .region-col a{color:var(--link-blue);text-decoration:none;}
+
+  footer{
+    padding:10px 20px;
+    font-size:11px;
+    color:var(--text-muted);
+    background:#fff;
+    border-top:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+  }
+
+  /* ---------- AI Search module (full page, replaces everything below the blue bar) ---------- */
+  #aiSearchModule{
+    display:none;
+    flex-direction:column;
+    height:78vh;
+  }
+  .ai-module-topbar{
+    background:#eef3fb;
+    border-bottom:1px solid var(--border);
+    padding:10px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:13px;
+  }
+  .ai-module-topbar .path{color:var(--text-muted);}
+  .ai-module-topbar .path strong{color:var(--coned-blue);}
+  .back-btn{
+    background:#fff;
+    border:1px solid var(--coned-blue);
+    color:var(--coned-blue);
+    border-radius:16px;
+    padding:6px 16px;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .chat-body-row{
+    flex:1;
+    display:flex;
+    overflow:hidden;
+  }
+  .chat-thread{
+    flex:1;
+    padding:20px 24px;
+    overflow-y:auto;
+    max-width:760px;
+    margin:0 auto;
+    width:100%;
+  }
+  .chat-bubble-user{
+    background:var(--coned-blue);
+    color:#fff;
+    padding:12px 16px;
+    border-radius:12px 12px 2px 12px;
+    max-width:70%;
+    margin-left:auto;
+    font-size:13.5px;
+    margin-bottom:6px;
+  }
+  .timestamp{
+    font-size:10.5px;
+    color:var(--text-muted);
+    text-align:right;
+    margin-bottom:18px;
+  }
+  .chat-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 18px;
+    max-width:100%;
+    margin-bottom:8px;
+  }
+  .chat-card.error{border-color:#e0a1a1;background:#fdf3f3;}
+  .chat-card.busy{display:flex;align-items:center;gap:10px;}
+  .spinner{
+    width:16px;height:16px;border-radius:50%;
+    border:2px solid #d7dbe2;border-top-color:var(--coned-blue);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .assistant-label{
+    font-weight:600;
+    font-size:13px;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .assistant-label .dotcircle{
+    width:20px;height:20px;border-radius:50%;
+    background:var(--coned-blue);color:#fff;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:700;
+  }
+  .chat-card p{font-size:13px;line-height:1.6;color:var(--text-dark);margin:0 0 10px;}
+  .sources-label{font-size:12.5px;font-weight:600;margin:10px 0 4px;}
+
+  .sources-panel-inline{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px solid var(--border);
+  }
+  .sources-panel-inline h5{
+    font-size:12px;
+    margin:0 0 8px;
+    color:var(--text-muted);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-weight:600;
+  }
+  .sources-url-list{
+    margin:0;
+    padding:0;
+    list-style:none;
+  }
+  .sources-url-list li{
+    padding:6px 0;
+    border-bottom:1px solid #eef0f3;
+    font-size:12.5px;
+  }
+  .sources-url-list li:last-child{border-bottom:none;}
+  .source-link{
+    color:var(--link-blue);
+    text-decoration:underline;
+    font-size:12.5px;
+    word-break:break-all;
+  }
+  .source-link:hover{color:var(--coned-blue-dark);}
+  .source-meta{
+    display:block;
+    color:var(--text-muted);
+    font-size:11px;
+    margin-top:2px;
+  }
+  .source-crop-caption{
+    font-size:11px;
+    font-weight:600;
+    color:var(--coned-blue);
+    margin-top:10px;
+    margin-bottom:4px;
+  }
+  .source-crop-img{
+    display:block;
+    width:auto;
+    max-width:320px;
+    max-height:220px;
+    object-fit:contain;
+    border:1px solid var(--border);
+    border-radius:6px;
+    cursor:pointer;
+    background:#f4f5f7;
+  }
+  .source-crop-img:hover{border-color:var(--coned-blue);}
+
+  .feedback-row{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:6px;
+    margin-top:12px;
+  }
+  .feedback-btn{
+    background:none;
+    border:1px solid var(--border);
+    border-radius:6px;
+    width:28px;
+    height:28px;
+    font-size:13px;
+    cursor:pointer;
+    color:var(--text-muted);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .feedback-btn:hover{background:#f2f4f7;}
+  .feedback-btn.active-up{background:#e4f5e9;border-color:#2fa84f;color:#2fa84f;}
+  .feedback-btn.active-down{background:#fdecec;border-color:#d9534f;color:#d9534f;}
+
+  .chat-input-row{
+    border-top:1px solid var(--border);
+    padding:12px 18px;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    background:#fff;
+  }
+  .chat-input-row input{
+    flex:1;
+    padding:9px 14px;
+    border:1px solid var(--border);
+    border-radius:20px;
+    font-size:13px;
+    outline:none;
+  }
+  .chat-input-row button{
+    background:var(--coned-blue);
+    color:#fff;
+    border:none;
+    padding:9px 20px;
+    border-radius:16px;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .chat-input-row button:disabled{background:#9aa0ab;cursor:default;}
+  .disclaimer{
+    text-align:center;
+    font-size:10.5px;
+    color:var(--text-muted);
+    padding:8px 0;
+    background:#fff;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-frame" id="appFrame">
+
+  <header class="app-header">
+    <div class="brand">
+      <img class="logo" src="eGIS Maps/eGIS Maps App/egis-maps-app/src/assets/img/logo.svg" alt="ConEdison" onerror="this.style.display='none'">
+      <img class="app-logo" src="eGIS Maps/eGIS Maps App/egis-maps-app/src/assets/img/eGIS_Logo.png" alt="eGIS" onerror="this.style.display='none'">
+      <span class="maps">&nbsp;Maps</span>
+    </div>
+
+    <div class="header-tabs">
+      <button class="header-tab-btn active">Electric</button>
+      <button class="header-tab-btn inactive-underline">Gas</button>
+      <button class="header-tab-btn inactive-underline">Steam</button>
+    </div>
+
+    <div class="header-search">
+      <span>&#128269;</span>
+      <input id="aiInput" type="text" placeholder="Ask AI Search, e.g. 'Show me the Bronx feeder map process'">
+      <button class="icon-btn" title="Voice search">&#127908;</button>
+      <button class="ai-icon-btn" title="AI Search" onclick="openAiSearch()">AI</button>
+    </div>
+
+    <div class="header-spacer"></div>
+
+    <div class="header-icons">
+      <span>&#9673;</span><span>&#128276;</span><span>&#128337;</span><span>&#9734;</span><span>&#9993;</span>
+    </div>
+  </header>
+
+  <div class="config-bar">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">Checking AI Search backend...</span>
+    <span style="flex:1"></span>
+    API base:
+    <input type="text" id="apiBase" value="http://127.0.0.1:8000">
+    <button onclick="checkStatus()">Recheck</button>
+  </div>
+
+  <!-- ================= HOME MODULE (unchanged below the blue bar) ================= -->
+  <div id="homeModule">
+    <div class="search-and-links-row">
+      <div class="search-fields">
+        <div class="field">
+          <label>Global Search</label>
+          <div class="global-search-toggle"><div class="knob"></div></div>
+        </div>
+        <div class="field">
+          <label>Region</label>
+          <select>
+            <option>Bronx</option>
+            <option>Manhattan</option>
+            <option>Brooklyn & Queens</option>
+            <option>Staten Island</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Facility</label>
+          <select>
+            <option>M&S Plate</option>
+            <option>Feeder Map</option>
+            <option>Network Map</option>
+            <option>Manhole Detail</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>PDF File Name</label>
+          <input type="text" placeholder="PDF File Name...">
+        </div>
+        <button class="go-btn">&#128269;</button>
+      </div>
+
+      <div class="row-divider"></div>
+
+      <div class="quicklinks">
+        <a href="#">eGIS Support</a><a href="#">Production Portal</a><a href="#">Reporting Portal</a>
+        <a href="#">Symbols</a><a href="#">Archived Maps</a><a href="#">eGIS Knowledge Hub</a>
+      </div>
+    </div>
+
+    <div class="notifications-strip">
+      <span>Notifications</span>
+      <span>&#9662;</span>
+    </div>
+
+    <div class="main-body">
+      <div class="sidebar">
+        <h4>Disclaimer</h4>
+        <p>Please note this eGIS application contains customer, transmission, distribution, electric, gas, and steam data assets deemed Critical Energy Infrastructure. Any party sending or receiving information from this application must be in compliance with corporate policy.</p>
+        <ul style="list-style:none;padding:0;margin:0 0 14px;">
+          <li><a href="#" class="policy-link">CEI-408</a></li>
+          <li><a href="#" class="policy-link">EOP-5108</a></li>
+          <li><a href="#" class="policy-link">G-8233</a></li>
+        </ul>
+        <div class="sidebar-logo">
+          <img src="eGIS Maps/eGIS Maps App/egis-maps-app/src/assets/img/logo.svg" alt="ConEdison" onerror="this.style.display='none'">
+          <span>conEdison</span>
+        </div>
+      </div>
+      <div class="content">
+        <div class="notif-header">&#9650; Electric</div>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:-4px;">For map discrepancies, contact your Regional Engineering mapping group. For enhancement requests, submit ideas to the Mapping Committee.</p>
+        <div class="maps-grid">
+          <div class="region-col">
+            <h5>Bronx & Westchester</h5>
+            <ul><li><a href="#">Bronx M&S Plate</a></li><li><a href="#">Westchester M&S Plate</a></li><li><a href="#">Bronx Feeder Map</a></li><li><a href="#">Bronx Network Map</a></li><li><a href="#">Bronx Manhole Detail</a></li></ul>
+          </div>
+          <div class="region-col">
+            <h5>Manhattan</h5>
+            <ul><li><a href="#">M&S Plate</a></li><li><a href="#">Feeder Map</a></li><li><a href="#">Vertical Detail Plate</a></li><li><a href="#">Conduit Plate</a></li><li><a href="#">Network Map</a></li></ul>
+          </div>
+          <div class="region-col">
+            <h5>Brooklyn & Queens</h5>
+            <ul><li><a href="#">Brooklyn M&S Plate</a></li><li><a href="#">Queens M&S Plate</a></li><li><a href="#">Brooklyn Feeder Map</a></li><li><a href="#">Brooklyn Network Map</a></li></ul>
+          </div>
+          <div class="region-col">
+            <h5>Staten Island</h5>
+            <ul><li><a href="#">M&S Plate</a></li><li><a href="#">C&O Plate</a></li><li><a href="#">Manhole Detail</a></li><li><a href="#">Regional Engineering</a></li></ul>
+          </div>
+          <div class="region-col">
+            <h5>General</h5>
+            <ul><li><a href="#">1000 Series</a></li><li><a href="#">Adept Layout</a></li><li><a href="#">Feeder Mapping Info</a></li><li><a href="#">ArcFM Web Links</a></li></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <span>Copyright &copy; 2024 ConEdison All rights reserved.</span>
+      <span>Rakesh Roy</span>
+    </footer>
+  </div>
+
+  <!-- ================= AI SEARCH MODULE (entire new page, not an overlay) ================= -->
+  <div id="aiSearchModule">
+    <div class="ai-module-topbar">
+      <div class="path">eGIS Maps &gt; <strong>AI Search</strong></div>
+      <button class="back-btn" onclick="closeAiSearch()">&larr; Back to Maps</button>
+    </div>
+
+    <div class="chat-body-row">
+      <div class="chat-thread" id="chatThread"></div>
+    </div>
+
+    <div class="chat-input-row">
+      <input id="followUpInput" type="text" placeholder="Ask a follow-up question..." onkeydown="if(event.key==='Enter'){sendFollowUp();}">
+      <button id="sendBtn" onclick="sendFollowUp()">Send</button>
+    </div>
+    <div class="disclaimer">Disclaimer: AI generated content may be incorrect.</div>
+  </div>
+
+</div>
+
+<script>
+function apiBase(){
+  return document.getElementById('apiBase').value.replace(/\/$/, '');
+}
+
+function timeNow(){
+  return new Date().toLocaleString('en-US', { month:'numeric', day:'numeric', year:'2-digit', hour:'numeric', minute:'2-digit' });
+}
+
+async function checkStatus(){
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className = 'status-dot';
+  text.textContent = 'Checking AI Search backend...';
+  try {
+    const resp = await fetch(apiBase() + '/api/ai-status');
+    const data = await resp.json();
+    if (data.available) {
+      dot.className = 'status-dot ok';
+      text.textContent = 'AI Search backend is reachable and configured.';
+    } else {
+      dot.className = 'status-dot bad';
+      text.textContent = 'Backend reachable, but GEMINI_API_KEY is not configured.';
+    }
+  } catch (e) {
+    dot.className = 'status-dot bad';
+    text.textContent = 'Cannot reach ' + apiBase() + ' — make sure server.py is running.';
+  }
+}
+
+function startNewChat(){
+  document.getElementById('chatThread').innerHTML = '';
+  document.getElementById('followUpInput').value = '';
+}
+
+function openAiSearch(){
+  const val = document.getElementById('aiInput').value.trim();
+  document.getElementById('homeModule').style.display = 'none';
+  document.getElementById('aiSearchModule').style.display = 'flex';
+  document.getElementById('aiInput').value = '';
+
+  // A query from the top search bar always starts a fresh conversation.
+  startNewChat();
+  if (val.length > 0) {
+    ask(val);
+  }
+}
+
+function closeAiSearch(){
+  document.getElementById('aiSearchModule').style.display = 'none';
+  document.getElementById('homeModule').style.display = 'flex';
+}
+
+document.getElementById('aiInput').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') { openAiSearch(); }
+});
+
+function sendFollowUp(){
+  const input = document.getElementById('followUpInput');
+  const val = input.value.trim();
+  if (!val) return;
+  input.value = '';
+  ask(val);
+}
+
+function appendUserBubble(text){
+  const thread = document.getElementById('chatThread');
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble-user';
+  bubble.textContent = text;
+  thread.appendChild(bubble);
+
+  const ts = document.createElement('div');
+  ts.className = 'timestamp';
+  ts.textContent = timeNow();
+  thread.appendChild(ts);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function appendBusyCard(){
+  const thread = document.getElementById('chatThread');
+  const card = document.createElement('div');
+  card.className = 'chat-card busy';
+  card.id = 'busyCard';
+  card.innerHTML = '<span class="dotcircle" style="background:var(--coned-blue);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">AI</span><div class="spinner"></div><span style="font-size:12.5px;color:var(--text-muted);">Searching map plates...</span>';
+  thread.appendChild(card);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function removeBusyCard(){
+  const el = document.getElementById('busyCard');
+  if (el) el.remove();
+}
+
+function appendAssistantCard(summary, results, totalFound, isError){
+  const thread = document.getElementById('chatThread');
+  const card = document.createElement('div');
+  card.className = 'chat-card' + (isError ? ' error' : '');
+
+  const label = document.createElement('div');
+  label.className = 'assistant-label';
+  label.innerHTML = '<span class="dotcircle">AI</span> eGIS AI Assistant';
+  card.appendChild(label);
+
+  const p = document.createElement('p');
+  p.textContent = summary;
+  card.appendChild(p);
+
+  if (!isError && results && results.length > 0) {
+    card.appendChild(buildInlineSources(results, totalFound));
+  }
+
+  if (!isError) {
+    card.appendChild(buildFeedbackRow());
+  }
+
+  thread.appendChild(card);
+
+  const ts = document.createElement('div');
+  ts.className = 'timestamp';
+  ts.textContent = timeNow();
+  thread.appendChild(ts);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function buildInlineSources(results, totalFound){
+  const wrap = document.createElement('div');
+  wrap.className = 'sources-panel-inline';
+  wrap.innerHTML = '<h5>&#128196; Data Sources &middot; ' + (totalFound || results.length) + ' plate(s) found</h5>';
+
+  const list = document.createElement('ul');
+  list.className = 'sources-url-list';
+  results.slice(0, 8).forEach(function(plate){
+    const li = document.createElement('li');
+    const pdfUrl = apiBase() + '/api/pdf?plate=' + encodeURIComponent(plate.plateId);
+    const link = document.createElement('a');
+    link.className = 'source-link';
+    link.href = pdfUrl;
+    link.target = '_blank';
+    link.textContent = pdfUrl;
+    li.appendChild(link);
+
+    const meta = document.createElement('span');
+    meta.className = 'source-meta';
+    meta.textContent = (plate.region || '?') + ' · ' + (plate.utility || '?') + ' · ' + (plate.facilityType || '?');
+    li.appendChild(meta);
+
+    const page = plate.pages && plate.pages[0];
+    if (page) {
+      const hasBbox = Array.isArray(page.bbox) && page.bbox.length === 4;
+      let cropUrl = apiBase() + '/api/crop?plate=' + encodeURIComponent(plate.plateId) + '&page=' + page.page;
+      if (hasBbox) {
+        cropUrl += '&x0=' + page.bbox[0] + '&y0=' + page.bbox[1] + '&x1=' + page.bbox[2] + '&y1=' + page.bbox[3];
+      }
+
+      const caption = document.createElement('div');
+      caption.className = 'source-crop-caption';
+      caption.textContent = hasBbox
+        ? 'Exact match highlighted' + (page.matchedWord ? ' — "' + page.matchedWord + '"' : '')
+        : 'Page preview (no exact location found on this page)';
+      li.appendChild(caption);
+
+      const img = document.createElement('img');
+      img.className = 'source-crop-img';
+      img.loading = 'lazy';
+      img.src = cropUrl;
+      img.alt = plate.plateId + ' page ' + page.page;
+      img.addEventListener('click', function(){ window.open(pdfUrl, '_blank'); });
+      li.appendChild(img);
+    }
+
+    list.appendChild(li);
+  });
+  wrap.appendChild(list);
+  return wrap;
+}
+
+function buildFeedbackRow(){
+  const row = document.createElement('div');
+  row.className = 'feedback-row';
+
+  const up = document.createElement('button');
+  up.className = 'feedback-btn';
+  up.title = 'Good response';
+  up.innerHTML = '&#128077;';
+
+  const down = document.createElement('button');
+  down.className = 'feedback-btn';
+  down.title = 'Not helpful';
+  down.innerHTML = '&#128078;';
+
+  up.addEventListener('click', function(){
+    up.classList.add('active-up');
+    down.classList.remove('active-down');
+  });
+  down.addEventListener('click', function(){
+    down.classList.add('active-down');
+    up.classList.remove('active-up');
+  });
+
+  row.appendChild(up);
+  row.appendChild(down);
+  return row;
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+async function ask(query){
+  appendUserBubble(query);
+  appendBusyCard();
+  setBusy(true);
+
+  try {
+    const url = apiBase() + '/api/ai-search?q=' + encodeURIComponent(query);
+    const resp = await fetch(url);
+    const data = await resp.json();
+    removeBusyCard();
+
+    if (data.error) {
+      appendAssistantCard(data.error, null, 0, true);
+    } else {
+      appendAssistantCard(data.summary, data.results, data.totalFound, false);
+    }
+  } catch (e) {
+    removeBusyCard();
+    appendAssistantCard('Sorry, the AI Search service is unavailable right now (' + e.message + '). Please confirm server.py is running and the API base URL above is correct.', null, 0, true);
+  } finally {
+    setBusy(false);
+  }
+}
+
+function setBusy(isBusy){
+  document.getElementById('sendBtn').disabled = isBusy;
+}
+
+checkStatus();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>eGIS Maps</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  
+  <link
+      rel="stylesheet"
+      href="https://unpkg.com/@progress/kendo-font-icons/dist/index.css"
+    />
+    <link
+          rel="stylesheet"
+          href="assets/styles/fontawesome-free/css/all.min.css"
+        />
+        
+  <link id="themeEl" rel="stylesheet" href="assets/styles/kendo-theme-bootstrap/bootstrap-main.css" />
+  <script>
+    if (window.location.origin) {
+      if (window.location.origin.toLowerCase().indexOf('.conedison.net') < 0 && window.location.origin.toLowerCase().indexOf('localhost') < 0) {
+        window.location.href = window.location.href.replace(window.location.origin, window.location.origin + '.conedison.net');// + "maps.html";
+      }
+      // else{
+      //   window.location.href=window.location.href + "maps.html";      
+      // }
+    }
+    else {
+      var newloc = window.location.protocol + '//' + window.location.host + ".conedison.net";//"/maps.html"; 
+
+      window.open('microsoft-edge:' + newloc, '_top');
+      window.close();
+
+    }
+    
+     
+  </script>
+ 
+</head>
+<body class="app-background" style="overflow: hidden;">
+  <app-root></app-root>
+</body>
+</html>

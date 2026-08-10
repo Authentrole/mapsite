@@ -1,0 +1,81 @@
+<kendo-expansionpanel class="ken-expansion" [title]="commodity | titlecase" expandIcon="fa fa-plus" collapseIcon="fa fa-minus"
+    [expanded]="chartExpandPanel">
+    <div style="display: flex; flex-direction: column; width: 100%;">
+
+        <!-- Disclaimer - ADO 1286313 -->
+@if(commodity.toLowerCase() === 'electric' && disclaimer){
+<div style="width: 100%; font-size: 0.85rem; padding: 8px 4px; margin-bottom: 8px;" 
+     [innerHTML]="disclaimer.disclaimer">
+</div>
+}
+
+        <div class="exp-div">
+        @for(region of facilityURLs; track region.name; let gI = $index){
+        <div class="card">
+            <div class="inner-card">
+                <div class="k-card card-header">
+                    {{region.name}}
+                </div>
+                <div class="card-body">
+                    @for(item of region.items; track item.name; let i = $index){
+                        @if(item.url){
+                            <div>
+                                <i style="cursor: pointer;font-size:0.85rem;" class="star-icon-color" [class]="isActive(gI, i) ? 'fas fa-star' : 'far fa-star'"
+                                    (click)="addToFavorite(item,gI, i)"></i>
+                                <span style="cursor: pointer;font-size:0.85rem;"
+                                    (click)="generateQueryParams(item, region.name, item.name, gI, i); $event.stopPropagation()">{{item.name}}</span>
+                                <i class="blinking-text fas fa-angle-double-left" *ngIf="item.isNew"></i>
+                            </div>
+                        }
+                        @else{
+                            <span style="cursor: pointer;font-size:0.85rem;"><b>{{item.name}}</b></span>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+        }
+        </div>
+
+    </div>
+</kendo-expansionpanel>
+
+<!-- <div class="expansion-panel-container">
+    <div class="expansion-panel" [class.expanded]="expanded">
+        <div class="panel-header k-card" (click)="togglePanel()">
+            {{component}}
+        </div>
+        <div class="panel-content" [class.expanded]="expanded">
+            <div class="exp-div">
+                @for(region of electricUrls; track region.name; let gI = $index){
+                <div class="card">
+                    <div class="inner-card">
+                        <div class="k-card card-header">
+                            {{region.name}}
+                        </div>
+                        <div class="card-body">
+                            @for(item of region.items; track item.name; let i = $index){
+                            <div style="font-size: 20px;">
+                                <i class="star-icon-color" [class]="isActive(gI, i) ? 'fas fa-star' : 'far fa-star'"
+                                    (click)="addToFavorite(gI, i)"></i>
+                                <span style="cursor: pointer;"
+                                    (click)="generateQueryParams(item, region.name, item.name, gI, i); $event.stopPropagation()">{{item.name}}</span>
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div> -->
+
+<!-- <ng-template #windowTitleBar let-win>
+    <span class="k-window-title">ConEdison Facility Map</span>
+    <button kendoWindowRestoreAction [window]="win"></button>
+    <button kendoWindowMaximizeAction [window]="win"></button>
+    <button kendoWindowCloseAction [window]="win"></button>
+  </ng-template> -->
+
+<!-- <div kendoWindowContainer></div> -->

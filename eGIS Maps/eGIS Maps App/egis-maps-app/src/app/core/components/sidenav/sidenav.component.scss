@@ -1,0 +1,38 @@
+
+
+kendo-drawer-container {
+    flex: 1 1 auto;
+    // overflow-y: auto;
+    // top:180px;
+    // top: calc(2.75 * (1.5vh + 1.1vw)) !important;
+    // height: calc(100% - calc(4.75 * (1.5vh + 1.1vw)));
+    /* height: 100vh; */
+    position: absolute;
+    top: 11rem;
+    left: 0;
+    width: 100%;
+    // position:relative;
+  }
+  kendo-drawer-content{
+    // height: 75vh;
+    height: calc(100vh - 13rem);
+    overflow-y: auto;
+  }
+
+  kendo-icon{
+    font-size: 1rem;
+  }
+
+  .k-drawer.k-drawer-start, .k-drawer-left .k-drawer {
+    top: unset !important;
+  }
+
+  kendo-drawer{
+    display: block;
+  }
+
+  .logo {
+    /* height:35px; */
+    height: calc(1.5 * (0.5vh + 1.1vw)) !important;
+    margin-left: unset !important;
+  }

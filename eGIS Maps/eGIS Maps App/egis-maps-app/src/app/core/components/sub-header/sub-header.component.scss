@@ -1,0 +1,76 @@
+.k-card {
+  width: 100% !important;
+  padding: 5px;
+}
+
+.container-fluid {
+  margin-bottom: 10px;
+}
+
+.container {
+  width: 100%;
+  margin: 5px;
+}
+
+.search-container {
+  width: 50%;
+}
+
+.link-container {
+  width: 50%;
+}
+
+.global-search {
+  width: 50%;
+  height: 40px;
+}
+
+.nav-card {
+  cursor: pointer;
+  width: 30% !important;
+}
+
+.hyperlink-icon {
+  font-size: 30px;
+  transform: rotate(45deg);
+}
+
+.card-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.card-content.expanded {
+  max-height: 500px;
+}
+
+
+
+.pdf-viewer-disabled {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.5;
+}
+
+.nav-links {
+  display: flex;
+  flex-direction: row;
+  width: 50%;
+  height: 100%;
+  gap: 1.25rem;
+  margin: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.content {
+  position: absolute;
+  top: 3rem;
+  left: 0px;
+  width: 100% !important;
+  height: 8rem;
+  padding: 0.75rem;
+}

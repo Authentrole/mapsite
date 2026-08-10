@@ -1,0 +1,6 @@
+@if(detailsGridData && detailsGridData.length > 0){
+     <egis-grid [GridData]="detailsGridData" GridName="Layout Number" GridHeight="70vh"
+               [ActionButtons]="actionButtons" [ToolbarButtons]="toolbarButtons"
+               (ActionButtonClick)="handleActionButton($event)" (ToolBarButtonClick)="handleToolbarButton($event)">
+     </egis-grid>
+}

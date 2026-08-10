@@ -1,0 +1,9 @@
+Drop 3-5 of your map PDFs (or PNG/JPG exports) into this folder, then run:
+
+    python run_ocr_test.py --input ./samples --output ./results
+
+Pick your HARDEST maps for this test — especially the dark-background ones
+(white text on near-black), since those decide whether open-source OCR is
+good enough or whether you need cloud OCR.
+
+You can delete this file.

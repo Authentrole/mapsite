@@ -1,0 +1,32 @@
+[
+    {
+        "region":"Manhattan",
+        "code": "4",
+        "short_name":"M"
+    },
+    {
+        "region":"Queens",
+        "code": "2",
+        "short_name":"Q"
+    },
+    {
+        "region":"Westchester",
+        "code": "2",
+        "short_name":"W"
+    },
+    {
+        "region":"Bronx",
+        "code": "2",
+        "short_name":"X"
+    },
+    {
+        "region":"Brooklyn",
+        "code": "2",
+        "short_name":"B"
+    },
+    {
+        "region":"Staten_Island",
+        "code": "2",
+        "short_name":"R"
+    }
+]

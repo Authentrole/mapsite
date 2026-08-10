@@ -1,0 +1,53 @@
+<div class="ai-search-page-root">
+  <div class="ai-search-wrapper">
+    <div class="chat-panel">
+      <app-assistant
+        (searchResults)="onSearchResults($event)"
+        (messagesChange)="onMessagesChange($event)"
+      >
+      </app-assistant>
+    </div>
+
+    <!-- Floating buttons for mobile, bottom-right corner -->
+    <div *ngIf="isMobile" class="mobile-floating-btns-container">
+      <button
+        class="mobile-fab"
+        *ngIf="isMobileCollapsed && latestResults && latestResults.length"
+        (click)="toggleMobileDatasource(); $event.stopPropagation()"
+        type="button"
+      >
+        <span>📊</span>
+      </button>
+      <button
+        class="mobile-refresh-fab"
+        *ngIf="messages && messages.length"
+        (click)="refreshMobile(); $event.stopPropagation()"
+        type="button"
+      >
+        <span>🔄</span>
+      </button>
+    </div>
+
+    <div
+      class="mobile-overlay"
+      *ngIf="isMobile && !isMobileCollapsed && latestResults && latestResults.length"
+      (click)="toggleMobileDatasource()"
+    ></div>
+
+    <div
+      class="datasource-panel"
+      *ngIf="latestResults && latestResults.length"
+      [class.mobile-collapsed]="isMobileCollapsed && isMobile"
+    >
+      <button
+        class="mobile-close-btn"
+        *ngIf="isMobile"
+        (click)="toggleMobileDatasource(); $event.stopPropagation()"
+        type="button"
+      >
+        <span>✕</span>
+      </button>
+      <app-datasource [results]="latestResults"></app-datasource>
+    </div>
+  </div>
+</div>

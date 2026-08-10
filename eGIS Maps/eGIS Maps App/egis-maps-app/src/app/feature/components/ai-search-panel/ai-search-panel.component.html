@@ -1,0 +1,87 @@
+<div class="ai-search-module">
+  <div class="ai-module-topbar">
+    <div class="path">eGIS Maps &gt; <strong>AI Search</strong></div>
+    <button type="button" class="back-btn" (click)="close()">&larr; Back to Maps</button>
+  </div>
+
+  <div class="chat-body-row">
+    <div class="chat-thread">
+      @for (msg of messages; track $index) {
+        @if (msg.role === 'user') {
+          <div class="chat-bubble-user">{{ msg.text }}</div>
+          <div class="timestamp">{{ msg.timestamp }}</div>
+        } @else {
+          <div class="chat-card" [class.error]="msg.isError">
+            <div class="assistant-label">
+              <span class="dotcircle">AI</span> eGIS AI Assistant
+              @if (msg.retrieval === 'rejected') {
+                <span class="retrieval-badge rejected">out of scope</span>
+              } @else if (msg.retrieval) {
+                <span class="retrieval-badge">{{ msg.retrieval }} retrieval</span>
+              }
+            </div>
+            <p>{{ msg.text }}</p>
+
+            @if (!msg.isError && msg.results && msg.results.length > 0) {
+              <div class="sources-panel-inline">
+                <h5>&#128196; Data Sources &middot; {{ msg.totalFound || msg.results.length }} plate(s) found</h5>
+                <ul class="sources-url-list">
+                  @for (plate of msg.results.slice(0, 8); track plate.plateId) {
+                    <li>
+                      <a class="source-link" [href]="pdfUrl(plate.plateId)" target="_blank">{{ pdfUrl(plate.plateId) }}</a>
+                      <span class="source-meta">{{ plate.region || '?' }} &middot; {{ plate.utility || '?' }} &middot; {{ plate.facilityType || '?' }}</span>
+
+                      @if (plate.pages && plate.pages[0]) {
+                        <div class="source-crop-caption">
+                          @if (hasBbox(plate.pages[0])) {
+                            Exact match highlighted @if (plate.pages[0].matchedWord) { &mdash; "{{ plate.pages[0].matchedWord }}" }
+                          } @else {
+                            Page preview (no exact location found on this page)
+                          }
+                        </div>
+                        <a [href]="pdfUrl(plate.plateId)" target="_blank">
+                          <img class="source-crop-img" loading="lazy" [src]="cropUrl(plate.plateId, plate.pages[0])"
+                            [alt]="plate.plateId + ' page ' + plate.pages[0].page">
+                        </a>
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @if (!msg.isError) {
+              <div class="feedback-row">
+                <button type="button" class="feedback-btn" [class.active-up]="msg.feedback === 'up'"
+                  title="Good response" (click)="giveFeedback(msg, 'up')">&#128077;</button>
+                <button type="button" class="feedback-btn" [class.active-down]="msg.feedback === 'down'"
+                  title="Not helpful" (click)="giveFeedback(msg, 'down')">&#128078;</button>
+              </div>
+            }
+          </div>
+          <div class="timestamp">{{ msg.timestamp }}</div>
+        }
+      }
+
+      @if (isBusy) {
+        <div class="chat-card busy">
+          <span class="dotcircle">AI</span>
+          <kendo-loader size="small"></kendo-loader>
+          <span class="thinking-text">Searching map plates...</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="chat-input-row">
+    <input
+      type="text"
+      placeholder="Ask a follow-up question..."
+      [(ngModel)]="followUpText"
+      (keypress)="onFollowUpKeyPress($event)"
+      [disabled]="isBusy"
+    />
+    <button kendoButton type="button" themeColor="primary" [disabled]="isBusy" (click)="sendFollowUp()">Send</button>
+  </div>
+  <div class="disclaimer">Disclaimer: AI generated content may be incorrect.</div>
+</div>

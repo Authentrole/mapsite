@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="3.3.1" />
+    <PackageReference Include="System.DirectoryServices" Version="9.0.9" />
+    <PackageReference Include="System.DirectoryServices.AccountManagement" Version="9.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LogUtil\LogUtil.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="ADUtility">
+      <HintPath>..\ComDlls\ADUtility.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

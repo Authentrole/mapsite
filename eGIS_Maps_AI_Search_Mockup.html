@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>eGIS Maps - AI Search Mockup</title>
+<style>
+  :root{
+    --coned-blue:#0d3b8c;
+    --coned-blue-dark:#0a2c6b;
+    --link-blue:#1a56b0;
+    --border:#d7dbe2;
+    --bg:#f4f5f7;
+    --panel-bg:#ffffff;
+    --text-dark:#1f2430;
+    --text-muted:#5b6270;
+    --pink-tag:#c8175d;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Segoe UI",Arial,Helvetica,sans-serif;
+    background:var(--bg);
+    color:var(--text-dark);
+  }
+  .browser-frame{
+    max-width:1000px;
+    margin:16px auto;
+    border:1px solid #999;
+    border-radius:6px;
+    overflow:hidden;
+    box-shadow:0 2px 10px rgba(0,0,0,0.15);
+    background:#fff;
+  }
+  .browser-topbar{
+    background:#e9eaed;
+    padding:8px 12px;
+    font-size:12px;
+    color:#333;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    border-bottom:1px solid #ccc;
+  }
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .dot.red{background:#ff5f57;}
+  .dot.yellow{background:#febc2e;}
+  .dot.green{background:#28c840;}
+  .addr-bar{
+    flex:1;
+    background:#fff;
+    border:1px solid #ccc;
+    border-radius:14px;
+    padding:4px 12px;
+    font-size:12px;
+    color:#555;
+  }
+
+  header.app-header{
+    background:var(--coned-blue);
+    color:#fff;
+    padding:10px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:20px;
+    font-weight:600;
+  }
+  .brand .con{color:#fff;}
+  .brand .edison{color:#fff;}
+  .brand .egis{color:#7ec4ef;font-weight:700;}
+  .brand .maps{font-weight:700;}
+  .header-icons{
+    display:flex;
+    gap:16px;
+    font-size:15px;
+    align-items:center;
+  }
+  .header-icons span{opacity:0.9;cursor:default;}
+
+  nav.utility-tabs{
+    background:#fff;
+    display:flex;
+    gap:10px;
+    padding:10px 20px;
+    border-bottom:1px solid var(--border);
+  }
+  .tab-btn{
+    padding:6px 22px;
+    border-radius:16px;
+    font-size:13px;
+    font-weight:600;
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--text-muted);
+  }
+  .tab-btn.active{
+    background:var(--coned-blue);
+    color:#fff;
+    border-color:var(--coned-blue);
+  }
+
+  .search-bar-row{
+    display:flex;
+    align-items:flex-end;
+    gap:16px;
+    padding:16px 20px;
+    background:#fff;
+    border-bottom:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .field label{
+    font-size:11px;
+    color:var(--text-muted);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+  }
+  .field select{
+    padding:7px 10px;
+    border:1px solid var(--border);
+    border-radius:4px;
+    font-size:13px;
+    min-width:140px;
+    background:#fff;
+  }
+  .ai-search-field{
+    flex:1;
+    min-width:280px;
+  }
+  .ai-search-box{
+    display:flex;
+    align-items:center;
+    border:1.5px solid var(--coned-blue);
+    border-radius:20px;
+    padding:6px 8px 6px 16px;
+    background:#f7fafe;
+  }
+  .ai-search-box input{
+    flex:1;
+    border:none;
+    background:transparent;
+    outline:none;
+    font-size:13px;
+    padding:4px;
+    color:var(--text-dark);
+  }
+  .ai-badge{
+    font-weight:700;
+    font-size:13px;
+    color:var(--coned-blue);
+    margin-right:6px;
+    display:flex;
+    align-items:center;
+    gap:2px;
+  }
+  .ai-badge sup{font-size:9px;}
+  .go-btn{
+    background:var(--coned-blue);
+    color:#fff;
+    border:none;
+    border-radius:16px;
+    padding:7px 16px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .go-btn:hover{background:var(--coned-blue-dark);}
+  .new-flag{
+    font-size:9px;
+    background:#c8175d;
+    color:#fff;
+    padding:1px 5px;
+    border-radius:3px;
+    font-weight:700;
+    vertical-align:top;
+    margin-left:4px;
+  }
+
+  .quicklinks{
+    display:flex;
+    gap:26px;
+    padding:14px 20px;
+    background:#fff;
+    border-bottom:1px solid var(--border);
+    font-size:13px;
+    color:var(--link-blue);
+    flex-wrap:wrap;
+  }
+  .quicklinks a{color:var(--link-blue);text-decoration:none;}
+
+  .main-body{display:flex;background:var(--bg);}
+  .sidebar{
+    width:220px;
+    padding:16px;
+    font-size:12px;
+    color:var(--text-muted);
+    border-right:1px solid var(--border);
+    background:#fff;
+  }
+  .sidebar h4{margin:0 0 8px;font-size:13px;color:var(--text-dark);}
+  .content{
+    flex:1;
+    padding:16px 20px;
+  }
+  .notif-header{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-weight:600;
+    font-size:14px;
+    margin-bottom:10px;
+  }
+  .maps-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:14px;
+  }
+  .region-col h5{
+    background:var(--coned-blue);
+    color:#fff;
+    margin:0;
+    padding:8px 10px;
+    font-size:12px;
+    border-radius:4px 4px 0 0;
+  }
+  .region-col ul{
+    list-style:none;
+    margin:0;
+    padding:8px 10px;
+    border:1px solid var(--border);
+    border-top:none;
+    font-size:11.5px;
+    line-height:1.9;
+    background:#fff;
+  }
+  .region-col a{color:var(--link-blue);text-decoration:none;}
+
+  footer{
+    padding:10px 20px;
+    font-size:11px;
+    color:var(--text-muted);
+    background:#fff;
+    border-top:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+  }
+
+  /* ---- AI Chat Module Overlay ---- */
+  .chat-overlay{
+    display:none;
+    position:absolute;
+    top:0;left:0;right:0;bottom:0;
+    background:rgba(20,25,40,0.35);
+    z-index:50;
+  }
+  .chat-overlay.open{display:block;}
+  .chat-module{
+    position:absolute;
+    top:0;
+    right:0;
+    width:78%;
+    height:100%;
+    background:#fbfcfe;
+    box-shadow:-4px 0 16px rgba(0,0,0,0.2);
+    display:flex;
+    flex-direction:column;
+    animation:slidein .25s ease-out;
+  }
+  @keyframes slidein{
+    from{transform:translateX(30px);opacity:0;}
+    to{transform:translateX(0);opacity:1;}
+  }
+  .chat-module-header{
+    background:var(--coned-blue);
+    color:#fff;
+    padding:12px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:14px;
+    font-weight:600;
+  }
+  .chat-module-header .path{
+    font-weight:400;
+    font-size:12px;
+    opacity:0.85;
+  }
+  .close-x{
+    cursor:pointer;
+    font-size:18px;
+    background:none;
+    border:none;
+    color:#fff;
+  }
+  .chat-body-row{
+    flex:1;
+    display:flex;
+    overflow:hidden;
+  }
+  .chat-thread{
+    flex:1;
+    padding:20px 24px;
+    overflow-y:auto;
+  }
+  .chat-bubble-user{
+    background:var(--coned-blue);
+    color:#fff;
+    padding:12px 16px;
+    border-radius:12px 12px 2px 12px;
+    max-width:70%;
+    margin-left:auto;
+    font-size:13.5px;
+    margin-bottom:6px;
+  }
+  .timestamp{
+    font-size:10.5px;
+    color:var(--text-muted);
+    text-align:right;
+    margin-bottom:18px;
+  }
+  .chat-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px 18px;
+    max-width:90%;
+    margin-bottom:8px;
+  }
+  .assistant-label{
+    font-weight:600;
+    font-size:13px;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .assistant-label .dotcircle{
+    width:20px;height:20px;border-radius:50%;
+    background:var(--coned-blue);color:#fff;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:700;
+  }
+  .chat-card p{font-size:13px;line-height:1.6;color:var(--text-dark);margin:0 0 10px;}
+  .sources-label{font-size:12.5px;font-weight:600;margin:10px 0 4px;}
+  .sources-list{margin:0;padding-left:18px;font-size:12.5px;}
+  .sources-list li{margin-bottom:4px;}
+  .sources-list a{color:var(--link-blue);text-decoration:none;}
+
+  .datasources-panel{
+    width:250px;
+    border-left:1px solid var(--border);
+    padding:16px 14px;
+    overflow-y:auto;
+    background:#fff;
+  }
+  .datasources-panel h4{
+    font-size:13px;
+    margin:0 0 4px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .datasources-panel .sub{
+    font-size:11px;
+    color:var(--text-muted);
+    margin-bottom:12px;
+  }
+  .filter-pills{
+    display:flex;
+    gap:6px;
+    margin-bottom:14px;
+  }
+  .pill{
+    font-size:11px;
+    padding:3px 10px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    color:var(--text-muted);
+  }
+  .pill.active{
+    background:var(--coned-blue);
+    color:#fff;
+    border-color:var(--coned-blue);
+  }
+  .doc-tile{
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:10px;
+  }
+  .doc-tile .title{
+    font-size:12px;
+    font-weight:600;
+    color:var(--link-blue);
+    margin-bottom:6px;
+    line-height:1.4;
+  }
+  .doc-tag{
+    display:inline-block;
+    background:var(--pink-tag);
+    color:#fff;
+    font-size:9.5px;
+    font-weight:700;
+    padding:2px 7px;
+    border-radius:3px;
+    margin-right:5px;
+  }
+  .doc-tag.gray{background:#7a8291;}
+  .doc-tile .open-link{
+    font-size:11px;
+    color:var(--text-muted);
+    margin-top:6px;
+  }
+
+  .chat-input-row{
+    border-top:1px solid var(--border);
+    padding:12px 18px;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    background:#fff;
+  }
+  .chat-input-row input{
+    flex:1;
+    padding:9px 14px;
+    border:1px solid var(--border);
+    border-radius:20px;
+    font-size:13px;
+    outline:none;
+  }
+  .chat-input-row button{
+    background:#9aa0ab;
+    color:#fff;
+    border:none;
+    padding:9px 20px;
+    border-radius:16px;
+    font-size:12.5px;
+    font-weight:600;
+  }
+  .disclaimer{
+    text-align:center;
+    font-size:10.5px;
+    color:var(--text-muted);
+    padding-bottom:8px;
+    background:#fff;
+  }
+  .hint{
+    font-size:10.5px;
+    color:var(--text-muted);
+    margin-top:4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="browser-frame" style="position:relative;">
+  <div class="browser-topbar">
+    <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+    <div class="addr-bar" id="addrbar">https://maps.conedison.net/#/home</div>
+  </div>
+
+  <header class="app-header">
+    <div class="brand">
+      <span class="con">con</span><span class="edison">Edison</span>
+      <span style="font-size:16px;">&#128506;</span>
+      <span class="egis">eGIS</span><span class="maps">&nbsp;Maps</span>
+    </div>
+    <div class="header-icons">
+      <span>&#9673;</span><span>&#128276;</span><span>&#128337;</span><span>&#9734;</span><span>&#9993;</span>
+    </div>
+  </header>
+
+  <nav class="utility-tabs">
+    <div class="tab-btn active">Electric</div>
+    <div class="tab-btn">Gas</div>
+    <div class="tab-btn">Steam</div>
+  </nav>
+
+  <div class="search-bar-row">
+    <div class="field">
+      <label>Region</label>
+      <select>
+        <option>Bronx</option>
+        <option>Manhattan</option>
+        <option>Brooklyn & Queens</option>
+        <option>Staten Island</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Facility</label>
+      <select>
+        <option>M&S Plate</option>
+        <option>Feeder Map</option>
+        <option>Network Map</option>
+        <option>Manhole Detail</option>
+      </select>
+    </div>
+    <div class="field ai-search-field">
+      <label>AI Search <span class="new-flag">NEW</span></label>
+      <div class="ai-search-box">
+        <span class="ai-badge">AI<sup>+</sup></span>
+        <input id="aiInput" type="text" placeholder="Ask a question, e.g. 'Show me the Bronx feeder map process'">
+      </div>
+      <div class="hint">Replaces the previous "PDF File Name" text box</div>
+    </div>
+    <button class="go-btn" onclick="openChat()">Search</button>
+  </div>
+
+  <div class="quicklinks">
+    <a href="#">eGIS Support</a><a href="#">Production Portal</a><a href="#">Reporting Portal</a>
+    <a href="#">Symbols</a><a href="#">Archived Maps</a><a href="#">eGIS Knowledge Hub</a>
+  </div>
+
+  <div class="main-body">
+    <div class="sidebar">
+      <h4>Disclaimer</h4>
+      <p>Please note this eGIS application contains customer, transmission, distribution, electric, gas, and steam data assets deemed Critical Energy Infrastructure. Any party sending or receiving information from this application must be in compliance with corporate policy.</p>
+      <p>CEII-408<br>EOP-5108<br>CIP-8-233</p>
+    </div>
+    <div class="content">
+      <div class="notif-header">&#9660; Electric</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:-4px;">For map discrepancies, contact your Regional Engineering mapping group. For enhancement requests, submit ideas to the Mapping Committee.</p>
+      <div class="maps-grid">
+        <div class="region-col">
+          <h5>Bronx & Westchester</h5>
+          <ul><li><a href="#">Bronx M&S Plate</a></li><li><a href="#">Westchester M&S Plate</a></li><li><a href="#">Bronx Feeder Map</a></li><li><a href="#">Bronx Network Map</a></li><li><a href="#">Bronx Manhole Detail</a></li></ul>
+        </div>
+        <div class="region-col">
+          <h5>Manhattan</h5>
+          <ul><li><a href="#">M&S Plate</a></li><li><a href="#">Feeder Map</a></li><li><a href="#">Vertical Detail Plate</a></li><li><a href="#">Conduit Plate</a></li><li><a href="#">Network Map</a></li></ul>
+        </div>
+        <div class="region-col">
+          <h5>Brooklyn & Queens</h5>
+          <ul><li><a href="#">Brooklyn M&S Plate</a></li><li><a href="#">Queens M&S Plate</a></li><li><a href="#">Brooklyn Feeder Map</a></li><li><a href="#">Brooklyn Network Map</a></li></ul>
+        </div>
+        <div class="region-col">
+          <h5>Staten Island</h5>
+          <ul><li><a href="#">M&S Plate</a></li><li><a href="#">C&O Plate</a></li><li><a href="#">Manhole Detail</a></li><li><a href="#">Regional Engineering</a></li></ul>
+        </div>
+        <div class="region-col">
+          <h5>General</h5>
+          <ul><li><a href="#">1000 Series</a></li><li><a href="#">Adept Layout</a></li><li><a href="#">Feeder Mapping Info</a></li><li><a href="#">ArcFM Web Links</a></li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Copyright &copy; 2024 ConEdison All rights reserved.</span>
+    <span>Rakesh Roy</span>
+  </footer>
+
+  <!-- AI Chat Module Overlay -->
+  <div class="chat-overlay" id="chatOverlay">
+    <div class="chat-module">
+      <div class="chat-module-header">
+        <div>eGIS Maps <span class="path">&nbsp;&gt;&nbsp;AI Search</span></div>
+        <button class="close-x" onclick="closeChat()">&times;</button>
+      </div>
+      <div class="chat-body-row">
+        <div class="chat-thread">
+          <div class="chat-bubble-user" id="userMsg">Show me the Bronx feeder map process</div>
+          <div class="timestamp" id="userTime">7/16/26, 9:05 AM</div>
+
+          <div class="chat-card">
+            <div class="assistant-label"><span class="dotcircle">AI</span> eGIS AI Assistant</div>
+            <p>Based on the selected region (Bronx) and facility (M&S Plate), here are the relevant feeder mapping resources. The Bronx Feeder Map shows primary and secondary feeder routing overlaid on the M&S plate grid, and is maintained by the Regional Engineering mapping group. For enhancement requests, submit ideas through the Mapping Committee.</p>
+            <div class="sources-label">Sources:</div>
+            <ul class="sources-list">
+              <li><a href="#">214_1: Bronx Feeder Map - Job Aid : Access Steps</a></li>
+              <li><a href="#">118_2: eGIS Maps - How to Read Feeder Overlay Symbols</a></li>
+              <li><a href="#">341_3: Regional Engineering - Feeder Map Update Process</a></li>
+            </ul>
+          </div>
+          <div class="timestamp">7/16/26, 9:05 AM</div>
+        </div>
+
+        <div class="datasources-panel">
+          <h4>&#128196; Data Sources</h4>
+          <div class="sub">Documents referenced by the assistant</div>
+          <div class="filter-pills">
+            <div class="pill active">All (5)</div>
+            <div class="pill">Maps (5)</div>
+          </div>
+
+          <div class="doc-tile">
+            <div class="title">Bronx Feeder Map - Job Aid : Access Steps</div>
+            <span class="doc-tag">MAPS</span><span class="doc-tag gray">Electric</span>
+            <div class="open-link">Open link to view document</div>
+          </div>
+          <div class="doc-tile">
+            <div class="title">eGIS Maps - How to Read Feeder Overlay Symbols</div>
+            <span class="doc-tag">MAPS</span><span class="doc-tag gray">Symbols</span>
+            <div class="open-link">Open link to view document</div>
+          </div>
+          <div class="doc-tile">
+            <div class="title">Regional Engineering - Feeder Map Update Process</div>
+            <span class="doc-tag">MAPS</span><span class="doc-tag gray">Process</span>
+            <div class="open-link">Open link to view document</div>
+          </div>
+          <div class="doc-tile">
+            <div class="title">Bronx M&S Plate - Grid Reference Guide</div>
+            <span class="doc-tag">MAPS</span><span class="doc-tag gray">Bronx</span>
+            <div class="open-link">Open link to view document</div>
+          </div>
+          <div class="doc-tile">
+            <div class="title">eGIS Maps - Symbols Legend Reference</div>
+            <span class="doc-tag">MAPS</span><span class="doc-tag gray">Symbols</span>
+            <div class="open-link">Open link to view document</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-row">
+        <input type="text" placeholder="Ask your question...">
+        <button>Send</button>
+      </div>
+      <div class="disclaimer">Disclaimer: AI generated content may be incorrect.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openChat(){
+  const val = document.getElementById('aiInput').value.trim();
+  if(val.length>0){
+    document.getElementById('userMsg').textContent = val;
+  }
+  document.getElementById('addrbar').textContent = "https://maps.conedison.net/#/ai-search";
+  document.getElementById('chatOverlay').classList.add('open');
+}
+function closeChat(){
+  document.getElementById('chatOverlay').classList.remove('open');
+  document.getElementById('addrbar').textContent = "https://maps.conedison.net/#/home";
+}
+document.getElementById('aiInput').addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){ openChat(); }
+});
+</script>
+
+</body>
+</html>

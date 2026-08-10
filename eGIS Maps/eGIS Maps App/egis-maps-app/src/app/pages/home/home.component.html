@@ -1,0 +1,36 @@
+<!-- <app-navcontent></app-navcontent> -->
+
+
+<!-- <div class="nav-content-container"> -->
+    
+
+    <!-- <div class="k-loading-panel" *ngIf="coreService.isBusy">
+        <div class="k-loading-panel-mask"></div>
+        <div class="k-loading-panel-wrapper">
+            <kendo-loader type="infinite-spinner"></kendo-loader>
+            <div class="k-loading-panel-text">Loading...</div>
+        </div>
+    </div> -->
+    <!--  -->
+    <!-- <div style="display: flex; flex-direction: row; flex-wrap: wrap;"> -->
+        
+            <app-header #header (toggle)="ToggleSideNav(sidenav)" (showComponentEvent)="showComponent($event)"
+            (notificationEvent)="notificationToggle($event)" (openAiSearchEvent)="openAiSearch($event)">
+            </app-header>
+
+            <div [hidden]="aiSearchVisible">
+                <!-- <kendo-card class="content"> -->
+                <app-sub-header #subheader [selectedMapsCommodity]="selectedMapsCommodity" [notifyToggleData]="dataToggle" (showSearchResultsEvent)="showSearchResults($event)"></app-sub-header>
+
+                <!-- </kendo-card> -->
+                <app-sidenav #sidenav [PDFList]="PDFList" [selectedMapsCommodity]="selectedMapsCommodity" [notifyToggleData]="dataToggle" style="width: 100%;"></app-sidenav>
+
+                <app-footer></app-footer>
+            </div>
+
+            <app-ai-search-panel [hidden]="!aiSearchVisible" [visible]="aiSearchVisible" [query]="aiSearchQuery" (closed)="closeAiSearch()"></app-ai-search-panel>
+           
+
+<!-- <ng-container #mainContainer></ng-container> -->
+<div kendoWindowContainer></div>
+<!-- </div> -->

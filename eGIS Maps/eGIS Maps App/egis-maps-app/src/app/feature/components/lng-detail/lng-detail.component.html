@@ -1,0 +1,461 @@
+<div style="display:flex;">
+    <div style="width: 15%;"></div>
+    <div style="justify-content: center;gap:2rem;width: 100%;">
+        <form class="k-form k-modal" style="max-width: 100%; " [formGroup]="formGroup">
+            <fieldset class="k-form-fieldset" [disabled]="LSNGenerated">
+                <div style="display: flex; flex-direction: row;justify-content: center; gap: 2rem;padding:0.5rem;">
+                    <div style="display: flex; flex-direction: column;width:10rem;">
+                        <kendo-formfield orientation="horizontal">
+                            <kendo-label class="form-label" [for]="year" text="Year">
+                                <span style='color: red;'>*</span>
+                            </kendo-label>
+                            <kendo-dropdownlist formControlName="year" #year required
+                                [popupSettings]="{ popupClass : 'dropdwon-list-item'}"
+                                style="font-size: 1rem;width:100%;" [data]="yearList"
+                                [kendoDropDownFilter]="filterSettings" [filterable]="true" textField="year"
+                                valueField="year" (valueChange)="handleYearChange($event)">
+                            </kendo-dropdownlist>
+                            <kendo-formerror> Error: Year is required </kendo-formerror>
+                            <!-- <kendo-numerictextbox
+                                formControlName="year" required
+                                #year      
+                                format="n0"
+                                [decimals]="0"     
+                                [min]="26"
+                                [max]="99"                                   
+                                
+                                format="##"                        
+                            >
+                            </kendo-numerictextbox>    
+                            <kendo-formerror *ngIf="formGroup.get('year')?.hasError('required')"> Error: Year is required </kendo-formerror>  
+                            <kendo-formerror *ngIf="formGroup.get('year')?.hasError('min')"> Error: Year must be grater than 26 </kendo-formerror>             -->
+                        </kendo-formfield>
+                    </div>
+                    <div style="display: flex;  flex-direction: column;width:50%;">
+                        <kendo-formfield orientation="horizontal">
+                            <kendo-label class="form-label" [for]="borough" text="Borough">
+                                <span style='color: red;'>*</span>
+                            </kendo-label>
+                            <kendo-dropdownlist formControlName="borough" #borough required
+                                [popupSettings]="{ popupClass : 'dropdwon-list-item'}"
+                                style="font-size: 1rem;width:100%;" [data]="filteredRegionList"
+                                [kendoDropDownFilter]="filterSettings" [filterable]="true" textField="borough"
+                                valueField="shortName" (valueChange)="handleBoroughChange($event)">
+                            </kendo-dropdownlist>
+                            <kendo-formerror> Error: Borough is required </kendo-formerror>
+                        </kendo-formfield>
+                    </div>
+                    <div style="display: flex; flex-direction: column;width:50%;">
+                        <kendo-formfield orientation="horizontal">
+                            <kendo-label class="form-label" [for]="municipal" text="Municipality / Service Area">
+                                <span style='color: red;'>*</span>
+                            </kendo-label>
+                            <kendo-dropdownlist formControlName="municipal" #municipal required
+                                [popupSettings]="{ popupClass : 'dropdwon-list-item'}"
+                                style="font-size: 1rem;width:100%;" [data]="filteredMunicipalList"
+                                (filterChange)="filterMunicipality($event)" [filterable]="true" textField="municipality"
+                                valueField="municipality">
+
+                                <ng-template kendoDropDownListItemTemplate let-dataItem>
+                                    @if(dataItem.municipality == dataItem.muniName){<span>{{ dataItem.municipality
+                                        }}</span>}
+                                    @if(dataItem.municipality != dataItem.muniName){<span>{{ dataItem.municipality }} -
+                                        {{ dataItem.muniName }}</span>}
+                                </ng-template>
+
+                                <ng-template kendoDropDownListValueTemplate let-dataItem>
+                                    @if(dataItem && dataItem.municipality == dataItem.muniName){
+                                    <span>
+                                        {{ dataItem.municipality }}
+                                    </span>
+                                    }
+                                    @if(dataItem && dataItem.municipality != dataItem.muniName){
+                                    <span>
+                                        {{ dataItem.municipality }} - {{ dataItem.muniName }}
+                                    </span>
+                                    }
+                                </ng-template>
+                            </kendo-dropdownlist>
+                            <kendo-formerror> Error: Municipality is required </kendo-formerror>
+                        </kendo-formfield>
+                    </div>
+
+                </div>
+                <div style="display: flex; flex-direction: row;justify-content: center; gap: 2rem;padding:0.5rem;">
+                    <div style="display: flex; flex-direction: column;width:10rem;">
+                    </div>
+                    <div style="display: flex;  flex-direction: column;width:50%;">
+                        <kendo-formfield orientation="horizontal">
+                            <kendo-label class="form-label" [for]="layoutClass" text="Layout Class">
+                                <span style='color: red;'>*</span>
+                            </kendo-label>
+                            <kendo-dropdownlist formControlName="layoutClass" #layoutClass required
+                                [popupSettings]="{ popupClass : 'dropdwon-list-item'}"
+                                style="font-size: 1rem;width:100%;" [data]="filteredLayoutClassList"
+                                [kendoDropDownFilter]="filterSettings" [filterable]="true" textField="layoutClass"
+                                valueField="layoutClass" (valueChange)="checkForLimit()">
+                            </kendo-dropdownlist>
+                            <kendo-formerror> Error: Layout Class is required </kendo-formerror>
+                        </kendo-formfield>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column;width:50%;">
+                        <kendo-formfield orientation="horizontal">
+                            <kendo-label class="form-label" [for]="layoutType" text="Type">
+                                <span style='color: red;'>*</span>
+                            </kendo-label>
+                            <kendo-dropdownlist formControlName="layoutType" #layoutType required
+                                [popupSettings]="{ popupClass : 'dropdwon-list-item'}"
+                                style="font-size: 1rem;width:100%;" [data]="filteredLayoutTypeList"
+                                (filterChange)="filterLayoutType($event)" [filterable]="true" textField="layoutType1"
+                                valueField="layoutType1" (valueChange)="checkForLimit()">
+                                <!-- Template for the items in the popup list -->
+                                <ng-template kendoDropDownListItemTemplate let-dataItem>
+                                    <span>{{ dataItem.layoutType1 }} - {{ dataItem.layoutTypeDescription.split(' – ')[0]
+                                        }}</span>
+                                    <!-- <br/>
+                                    <span style="font-size: 0.5rem;">{{ dataItem.layoutTypeDescription.split(' – ')[1] }}</span> -->
+                                </ng-template>
+
+                                <ng-template kendoDropDownListValueTemplate let-dataItem>
+                                    @if(dataItem){
+                                    <span>
+                                        {{ dataItem.layoutType1 }} - {{ dataItem.layoutTypeDescription.split(' – ')[0]
+                                        }}
+                                    </span>
+                                    }
+                                </ng-template>
+                            </kendo-dropdownlist>
+                            <kendo-formerror> Error: Layout Type is required </kendo-formerror>
+                        </kendo-formfield>
+                    </div>
+                </div>
+                @if(showLimitWarning){
+                <span style='color: red;margin-left: 9rem;'>{{(lsngConfig?.limit_warning_msg ||
+                    'Warning: You are nearing the Sequence Number limit for {b} {l}').replace('{b}',
+                    formGroup.get('borough')?.value?.borough).replace('{l}',
+                    formGroup.get('layoutClass')?.value?.layoutClass)}}</span>
+                }
+                @if(showLimitError){
+                <span style='color: red;margin-left: 9rem;'>{{(lsngConfig?.limit_error_msg ||
+                    'Error: You have reached the Sequence Number limit for {b} {l}').replace('{b}',
+                    formGroup.get('borough')?.value?.borough).replace('{l}',
+                    formGroup.get('layoutClass')?.value?.layoutClass)}}</span>
+                }
+                <div hidden
+                    style="display: flex; flex-direction: row;justify-content: center; gap: 2rem;padding:0.5rem;">
+                    <div style="display: flex; flex-direction: column;width:10rem;">
+                        <kendo-formfield orientation="horizontal">
+                            <kendo-label class="form-label" [for]="newPart" text="New Part">
+                            </kendo-label>
+
+                            <kendo-switch class="global-search" #newPart formControlName="newPart" onLabel="Off"
+                                offLabel="On" (valueChange)="validateNewPart($event)">
+                            </kendo-switch>
+                        </kendo-formfield>
+                    </div>
+                    <div style="width: 100%;">
+                        <div
+                            style="display: inline-flex; justify-content: space-between; width:100%;gap:2rem;padding-bottom:1rem;">
+                            <div style="display: inline-flex; justify-content: space-between; width:50%;gap:1rem;">
+                                <div style="width: 80%;">
+                                    <kendo-formfield orientation="horizontal">
+                                        <kendo-label class="form-label" [for]="sequence" text="Sequence Number">
+                                            <span style='color: red;'>*</span>
+                                        </kendo-label>
+                                        <kendo-dropdownlist #sequence formControlName="sequence" required
+                                            [popupSettings]="{ popupClass : 'dropdwon-list-item'}"
+                                            style="font-size: 1rem;" [data]="filteredSequenceList"
+                                            [kendoDropDownFilter]="filterSettings" [filterable]="true"
+                                            textField="layoutSeqNum" valueField="layoutSeqNum"
+                                            (valueChange)="handleSequenceChange($event)">
+                                        </kendo-dropdownlist>
+                                        <kendo-formerror> Error: Sequence Number is required </kendo-formerror>
+                                    </kendo-formfield>
+                                </div>
+                                <div style="display: flex; flex-direction: column;width: 10rem;">
+                                    <kendo-formfield orientation="horizontal">
+                                        <kendo-label class="form-label" [for]="part" text="Part">
+                                            <span style='color: red;'>*</span>
+                                        </kendo-label>
+                                        <kendo-textbox formControlName="part" #part [readonly]="true" required>
+                                        </kendo-textbox>
+                                        <!-- <kendo-numerictextbox
+                                            formControlName="part"  required
+                                            #part      
+                                            [decimals]="0"     
+                                            [min]="000"
+                                            [max]="999"
+                                            [value]="002"
+                                            [maxlength]="3"
+                                            format="###"                        
+                                        >
+                                        </kendo-numerictextbox>     -->
+                                        <kendo-formerror> Error: Part is required </kendo-formerror>
+                                    </kendo-formfield>
+                                </div>
+                            </div>
+
+                            <div style="display: flex;  flex-direction: column;width:50%;">
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; flex-direction: row;justify-content: center; gap: 2rem;">
+                                <div style="display: inline-flex; justify-content: space-between; width:50%;">
+                                    <div style="width: 100%;">
+                                        <kendo-formfield orientation="horizontal">
+                                            <kendo-label class="form-label" [for]="network" text="Network">
+                                                <span style='color: red;'>*</span>
+                                            </kendo-label>
+                                            <kendo-dropdownlist formControlName="network" #network required
+                                                [popupSettings]="{ popupClass : 'dropdwon-list-item'}"
+                                                style="font-size: 1rem;" [data]="filteredNetworkList"
+                                                (filterChange)="filterNetwork($event)" [filterable]="true"
+                                                textField=networkNo valueField="networkNo">
+                                                <ng-template kendoDropDownListItemTemplate let-dataItem>
+                                                    @if(dataItem.networkName1){<span>{{ dataItem.networkNo }} - {{
+                                                        dataItem.networkName1 }}</span>}
+                                                    @if(!dataItem.networkName1){<span>{{ dataItem.networkNo }}</span>}
+                                                </ng-template>
+
+                                                <ng-template kendoDropDownListValueTemplate let-dataItem>
+                                                    @if(dataItem && dataItem.networkName1){
+                                                    <span>
+                                                        {{ dataItem.networkNo }} - {{ dataItem.networkName1 }}
+                                                    </span>
+                                                    }
+                                                    @if(dataItem && !dataItem.networkName1){
+                                                    <span>
+                                                        {{ dataItem.networkNo }}
+                                                    </span>
+                                                    }
+                                                </ng-template>
+                                            </kendo-dropdownlist>
+                                            <kendo-formerror> Error: Network is required </kendo-formerror>
+                                        </kendo-formfield>
+                                    </div>
+
+                                </div>
+                                <div style="display: flex;  flex-direction: column;width:50%;">
+                                    <div style="width: 100%;">
+                                        <!-- <kendo-formfield orientation="horizontal">
+                                            <kendo-label class="form-label" [for]="eventNumber" text="Event Number (Emergency Layouts)">
+                                            </kendo-label>
+                                            <kendo-numerictextbox #eventNumber formControlName="eventNumber"
+                                            style="font-size: 1rem;"
+                                            [decimals]="0"
+                                            format="##########"
+                                            [min]="0"
+                                            [maxlength]="10" 
+                                            [autoCorrect]="true"     
+                                            [spinners]="false">
+                                            </kendo-numerictextbox>
+                                        </kendo-formfield> -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: row;justify-content: center; gap: 2rem;padding:0.5rem;">
+                    <div style="display: flex; flex-direction: column;width:10rem;">
+                        <kendo-formfield orientation="horizontal">
+                            <kendo-label class="form-label" [for]="partCount"
+                                [text]="SelectedLayout ? 'No. of New Parts' : 'No. of Parts'">
+                                <span style='color: red;'>*</span>
+                            </kendo-label>
+                            <kendo-numerictextbox #partCount formControlName="partCount" [decimals]="0"
+                                [min]="minPartCount" [max]="999" [maxlength]="3" [autoCorrect]="true" format="###">
+                            </kendo-numerictextbox>
+                            <kendo-formerror> Error: No. of Parts is required </kendo-formerror>
+                        </kendo-formfield>
+                    </div>
+                    <div style="width: 100%;">
+                        <div>
+                            <div style="display: flex; flex-direction: row;justify-content: center; gap: 2rem;">
+                                <div style="display: inline-flex; justify-content: space-between; width:50%;">
+                                    <div style="width: 100%;">
+                                        <kendo-formfield orientation="horizontal">
+                                            <kendo-label class="form-label" [for]="network" text="Network">
+                                                <span style='color: red;'>*</span>
+                                            </kendo-label>
+                                            <kendo-dropdownlist formControlName="network" #network required
+                                                [popupSettings]="{ popupClass : 'dropdwon-list-item'}"
+                                                style="font-size: 1rem;" [data]="filteredNetworkList"
+                                                (filterChange)="filterNetwork($event)" [filterable]="true"
+                                                textField=networkNo valueField="networkNo">
+                                                <!-- Template for the items in the popup list -->
+                                                <ng-template kendoDropDownListItemTemplate let-dataItem>
+                                                    @if(dataItem.networkName1){<span>{{ dataItem.networkNo }} - {{
+                                                        dataItem.networkName1 }}</span>}
+                                                    @if(!dataItem.networkName1){<span>{{ dataItem.networkNo }}</span>}
+                                                </ng-template>
+
+                                                <ng-template kendoDropDownListValueTemplate let-dataItem>
+                                                    @if(dataItem && dataItem.networkName1){
+                                                    <span>
+                                                        {{ dataItem.networkNo }} - {{ dataItem.networkName1 }}
+                                                    </span>
+                                                    }
+                                                    @if(dataItem && !dataItem.networkName1){
+                                                    <span>
+                                                        {{ dataItem.networkNo }}
+                                                    </span>
+                                                    }
+                                                </ng-template>
+                                            </kendo-dropdownlist>
+                                            <kendo-formerror> Error: Network is required </kendo-formerror>
+                                        </kendo-formfield>
+                                    </div>
+
+                                </div>
+                                <div style="display: flex;  flex-direction: column;width:50%;">
+                                    <div style="width: 100%;">
+                                        <kendo-formfield orientation="horizontal">
+                                            <kendo-label class="form-label" [for]="layoutApp" text="Layout Application">
+                                                <span style='color: red;'>*</span>
+                                            </kendo-label>
+                                            <kendo-dropdownlist formControlName="layoutApp" #layoutApp required
+                                                [popupSettings]="{ popupClass : 'dropdwon-list-item'}"
+                                                style="font-size: 1rem;width:100%;" [data]="layoutAppList"
+                                                [kendoDropDownFilter]="filterSettings" [filterable]="true"
+                                                textField="AppName" valueField="AppName">
+                                            </kendo-dropdownlist>
+                                            <kendo-formerror> Error: Layout Application is required </kendo-formerror>
+                                        </kendo-formfield>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: row;justify-content: center; gap: 2rem;padding:0.5rem;">
+                    <div style="display: flex; flex-direction: column;width:10rem;">
+
+                    </div>
+                    <div style="display: flex;  flex-direction: column;width:50%;">
+                        <div style="width: 100%;">
+                            <kendo-formfield orientation="horizontal">
+                                <kendo-label class="form-label" [for]="eventNumber"
+                                    text="Event Number (Emergency Layouts)">
+                                </kendo-label>
+                                <!-- <kendo-numerictextbox #eventNumber formControlName="eventNumber"
+                                style="font-size: 1rem;"
+                                [decimals]="0"
+                                format="##########"
+                                [min]="0"
+                                [maxlength]="10" 
+                                [autoCorrect]="true"     
+                                [spinners]="false">
+                                </kendo-numerictextbox> -->
+                                <kendo-textbox #eventNumber formControlName="eventNumber" style="font-size: 1rem;">
+                                </kendo-textbox>
+                            </kendo-formfield>
+                        </div>
+                    </div>
+                    <div style="width:50%;">
+                        <kendo-formfield orientation="horizontal">
+                            <kendo-label class="form-label" [for]="mcNumber" text="MC Number">
+                            </kendo-label>
+                            <kendo-textbox #mcNumber formControlName="mcNumber" style="font-size: 1rem;">
+                            </kendo-textbox>
+                        </kendo-formfield>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: row;justify-content: center; gap: 2rem;padding:0.5rem;">
+                    <div style="display: flex; flex-direction: column;width:10rem;">
+
+                    </div>
+                    <div style="width:100%;">
+                        <kendo-formfield orientation="horizontal">
+                            <kendo-label class="form-label" [for]="wrNumber" text="WR Number">
+                                <!-- <span style='color: red;'>*</span> -->
+                                <span class="k-icon k-font-icon k-i-question"
+                                    style="font-size: 0.75rem !important;margin-top: 0.5rem;" themecolor="primary"
+                                    kendoPopoverAnchor [popover]="wrDefinition" showOn="hover">
+                                </span>
+                                <kendo-popover #wrDefinition [callout]="false" position="top">
+                                    <ng-template kendoPopoverBodyTemplate let-anchor let-data="tooltipConfig">
+                                        <div style="max-width: 30rem; padding: 1.5rem;  border: 1px solid gray;"
+                                            [innerHTML]="tooltipConfig">
+                                        </div>
+                                    </ng-template>
+                                </kendo-popover>
+                            </kendo-label>
+                            <kendo-textarea formControlName="wrNumber" #wrNumber [maxlength]="600" [rows]="3"
+                                (keydown)="onKeyDown($event)" placeholder="Enter WR numbers separated by / or - or ,">
+                                <!--  -->
+                            </kendo-textarea>
+                            <!-- <kendo-formerror *ngIf="formGroup.get('wrNumber')?.errors?.['required']"> 
+                                Error: WR Number is required </kendo-formerror>      -->
+                            <!-- Error Messages -->
+                            @if(formGroup.get('wrNumber')?.errors?.['maxlength']){
+                            <kendo-formerror>
+                                Maximum length of 600 characters exceeded.
+                            </kendo-formerror>
+                            }
+
+                            @if(formGroup.get('wrNumber')?.errors?.['invalidFormat']){
+                            <kendo-formerror>
+                                {{lsngConfig?.wr_format_error_message || 'Invalid format. Please enter WR numbers
+                                separated by \ or - or ,'}}
+                            </kendo-formerror>
+                            }
+                        </kendo-formfield>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+        @if(errorMessage){
+        <div style="padding:1rem 1rem 0 1rem;">
+            <kendo-label class="form-label" style="font-style:italic;color:red;" [text]="errorMessage">
+            </kendo-label>
+        </div>
+        }
+        @if(LSNGenerated){
+        <div style="padding:1rem 1rem 0 1rem;">
+            <!-- <div style="width:100%;"> -->
+            <kendo-label class="form-label" style="font-weight: bold;" text="New Layout Number">
+            </kendo-label>
+            <br />
+            @if(lsngConfig?.new_layout_number_message){
+            <kendo-label class="form-label" style="font-style:italic;"
+                [text]="lsngConfig?.new_layout_number_message || ''">
+            </kendo-label>
+            }
+            <!-- <br/> -->
+            <!-- <div style="display: inline-flex; justify-content: space-between; width:25rem;gap:1rem;margin-top:0.5rem;">
+                    <kendo-textbox style="font-size: 1rem;" [readonly]="true" >
+                    </kendo-textbox>
+                    <kendo-button [primary]="true" icon="copy" title="Copy">Copy</kendo-button>   
+                </div>          -->
+            <!-- </div> -->
+
+        </div>
+        }
+        <div style="display:inline-flex; width:100%;padding:0 1rem;">
+            @if(LSNGenerated){
+            <div style="display: inline-flex; justify-content: space-between; width:50%;gap:1rem;margin-top:0.5rem;">
+                <kendo-textbox style="font-size: 1rem;" [readonly]="true" [value]="layoutNumber">
+                </kendo-textbox>
+                <button kendoButton [primary]="true" icon="copy" title="Copy" ngxClipboard [cbContent]="layoutNumber"
+                    (click)="CopyLayoutNumber(layoutNumber)">Copy</button>
+            </div>
+            }
+            <!-- <div style="display: flex; flex-direction: row;justify-content: right; gap: 0.5rem;padding:1rem;"> -->
+
+            <div style="display: inline-flex; width: 100%; justify-content: right; gap:1rem;margin-top:0.5rem;">
+                <button kendoButton [themeColor]="'secondary'" title="Close" (click)="closeWindow()">Close</button>
+                <button kendoButton [themeColor]="'warning'" title="Clear" (click)="setFormGroup(true)">Clear</button>
+                @if(!LSNGenerated){
+                <button kendoButton [primary]="true" [tabIndex]="0" title="Generate Layout Number"
+                    [disabled]="disableSave()" (click)="generateLSN()">{{SaveBtnText}}</button>
+                }
+
+                <!-- </div> -->
+
+            </div>
+        </div>
+    </div>
+    <div style="width: 15%;"></div>
+</div>

@@ -1,0 +1,38 @@
+[
+    {
+        "name" : "Manhattan",
+        "items": [
+            {
+                "name" : "Steam Plate",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_STEAM"
+            },
+            {
+                "name" : "M&S Plate",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_S_M_and_S"
+            },
+            {
+                "name" : "Meter Room",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_MeterRoom"
+            },
+            {
+                "name" : "Loose Leaf",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_LooseLeaf",
+                "search_subfolders": true
+            }
+        ]
+    },
+    {
+        "name" : "General",
+        "items": [            
+            {
+                "name" : "ArcGIS Steam Portal",
+                "url" : "https://egisportal.conedison.net/portal/apps/sites/#/steam",
+                "isNew":true
+            },
+            {
+                "name" : "Steam Online",
+                "url" : "https://intappsp.coned.com/SteamOnLine2/app/drawings"
+            }
+        ]
+    }
+]

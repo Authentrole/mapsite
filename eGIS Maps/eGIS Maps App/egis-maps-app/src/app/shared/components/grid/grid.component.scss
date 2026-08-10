@@ -1,0 +1,18 @@
+.toggled-on {
+    color: #0c65e9 !important;
+}
+
+::ng-deep .k-pager-md .k-pager-sizes .k-dropdownlist{
+    width: unset !important;
+}
+.star{
+    cursor: pointer;
+}
+
+.show-more-container {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: end;
+    margin-right: 0.5rem;
+}

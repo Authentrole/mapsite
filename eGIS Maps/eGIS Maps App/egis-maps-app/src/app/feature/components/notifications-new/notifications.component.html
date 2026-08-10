@@ -1,0 +1,96 @@
+<kendo-expansionpanel *ngIf="notifications.length > 0" class="ken-expansion" title="Notifications" expandIcon="fa fa-plus" collapseIcon="fa fa-minus"
+    [(expanded)]="expandPanel">
+<div class="card-container" >
+    <kendo-card style="width: 100%;">     
+      <kendo-card-body *ngIf="notifications.length > 0" style="padding:0px !important;">
+        <kendo-scrollview #sv [data]="notifications" [width]="width" [height]="height" [arrows]="notifications.length > 1"
+          [pageable]="pageable" [endless]="notifications.length > 1"  [pagerOverlay]="pagerOverlay" (activeIndexChange)="getCurrentNotification($event)">
+          <ng-template let-item="item">
+            <div style="width:100%;">
+              <kendo-card  style="width:100%;justify-content: left;border: none;">
+                <kendo-card-body style=" flex:none;">
+                  <kendo-label style="text-align: center;text-wrap:wrap;">
+                    @if(item.title != authorizationService.config[0].announcement_notification_type){
+                      <span *ngIf="item.isCompleted=='0'" ><strong style="color: white;
+                        background-color: red;
+                        border-radius: 5px;
+                        padding: 5px;">{{item.title}} :</strong>             
+                         On {{formatText(item.commodities)}}  in {{formatText(item.environments)}} environment(s)  
+                         from {{item.fromDate | date: 'EEEE MM/dd/yyyy hh:mm a'}} 
+                         to {{item.toDate | date: 'EEEE MM/dd/yyyy hh:mm a'}}
+                        </span>
+                      <span *ngIf="item.isCompleted=='1'" ><strong style="color: white;
+                        background-color: green;
+                        border-radius: 5px;
+                        padding: 5px;">{{item.title}} - Completed :</strong>            
+                         On {{formatText(item.commodities)}} in {{formatText(item.environments)}} environment(s)                      
+                         from {{item.fromDate | date: 'EEEE MM/dd/yyyy hh:mm a'}} 
+                         to {{item.toDate | date: 'EEEE MM/dd/yyyy hh:mm a'}}
+                        </span> 
+                    }
+                    @if(item.title == authorizationService.config[0].announcement_notification_type){
+                      <span><b>{{item.title}}</b></span><span class='blinking-text' style="font-size: 1.5rem;">***</span>
+                    }                     
+                  </kendo-label>                      
+                  <hr style="color: gray; opacity: 0.1;"/>
+                  @if(item.title != authorizationService.config[0].announcement_notification_type){
+                  <div style="width: 100%; display: inline-flex;" *ngIf="item.commodities">
+                    <kendo-card *ngFor='let commodity of item.commodities.split(",") ;' style="width: 100%; display: inline-flex;">
+                      <kendo-card-header style="text-align: center;" *ngIf="item.isCompleted == 0">Planned status of {{commodity.trim()}} applications during outage</kendo-card-header>
+                      <kendo-card-header style="text-align: center;" *ngIf="item.isCompleted == 1">Current status of {{commodity.trim()}} applications</kendo-card-header>
+                      <kendo-card-body style="width: 100%; display: inline-flex;justify-content: space-around;">
+                      <div *ngFor='let app of GetCommodityApps(item.applications,commodity);' style="text-align: center;">
+                        <!-- <span *ngIf="app.indexOf(commodity) > 0"> -->
+                          <kendo-avatar #{{app}} 
+                            title="{{app.replace('|un',' - Unavailable').replace('|av',' - Available').replace('|pa',' - Partially Available')}}"
+                            class="avatar-icon-sm fs-sm-{{(app.split('|')[0] | titlecase).replace('Arcfm','').trim().split(' ')[0].toLowerCase().trim()}}"
+                            iconClass='fas fa-{{(app.split("|")[0] | titlecase).replace("Arcfm","").replace("Mobile", "Mobile-alt").replace("Web","Globe").replace("Dig","exclamation-triangle").replace("Designer","Drafting-compass").replace("Dxi","Drafting-compass").trim().split(" ")[0].toLowerCase().trim()}}'
+                            [themeColor]="item.isCompleted==1 ? 'success' : app.split('|')[1]=='un' ? 'error' : app.split('|')[1]=='pa' ? 'warning' : 'success'"
+                            size="small"></kendo-avatar>
+                          <br />
+                          <kendo-label for={{app}} style="text-align:center;font-size: 0.75rem;text-wrap: wrap;">
+                            {{app.split('|')[0]}}
+                            <br />
+                            {{item.isCompleted == 1 ? 'Available' : app.split('|')[1]=='un' ? 'Unavailable' : app.split('|')[1]=='av' ? 'Available' : 'Partially Available'}}
+                          </kendo-label>
+                        <!-- </span> -->
+                      </div>
+                    </kendo-card-body>
+                    </kendo-card>              
+                </div>
+              }
+              @if(item.title == authorizationService.config[0].announcement_notification_type){
+                <div style="width: 100%; display: inline-flex; padding-left:20px;">
+                  <kendo-card  style="width:100%;justify-content: left;border: none;">
+                    <kendo-card-body style=" flex:none;">
+                      <kendo-label style="text-align: center;text-wrap:wrap;font-size: 0.85rem;">                        
+                        <span [innerHTML]="item.message"></span>
+                        <!-- <span class='blink' style="font-size: 1.5rem;">***</span> -->
+                      </kendo-label>
+                      </kendo-card-body>
+                      </kendo-card>
+                </div>
+              }
+                </kendo-card-body>      
+              </kendo-card>                   
+            </div>
+          </ng-template>
+        </kendo-scrollview>
+      </kendo-card-body>  
+          
+      <kendo-card-footer *ngIf="currentNotification && currentNotification.title != authorizationService.config[0].announcement_notification_type" style="display: inline-flex;height: 50px;">
+        <div style ="display: inline-flex;justify-content: space-evenly; width: 40%;">      
+          <span style="display: inline-flex;font-size: 0.75rem;"><span style="display:block; margin-top: 3px; width:15px;height:15px;border-radius:100%;background-color:green;"></span>&nbsp;Available</span>
+          <span style="display: inline-flex;font-size: 0.75rem;"><span style="display:block; margin-top: 3px;  width:15px;height:15px;border-radius:100%;background-color:red;"></span>&nbsp;Unavailable</span>
+          <span style="display: inline-flex;font-size: 0.75rem;"><span style="display:block; margin-top: 3px;  width:15px;height:15px;border-radius:100%;background-color:orange;"></span>&nbsp;Partially available</span>
+        </div>
+        <span style="width: 60%; justify-content: right; display: flex;" >
+          <button kendoButton themeColor="primary" style="height: 40px;margin-top: -10px;font-size: 0.75rem;" (click)="openDialogForm();">View Notification Details</button>
+        </span>
+      </kendo-card-footer>  
+    </kendo-card>
+   
+</div>
+</kendo-expansionpanel>
+<div kendoDialogContainer></div>
+<br/>

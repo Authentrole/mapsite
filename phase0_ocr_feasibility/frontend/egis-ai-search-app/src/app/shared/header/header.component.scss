@@ -1,0 +1,53 @@
+:host {
+  --coned-blue: #0d3b8c;
+  --coned-blue-dark: #0a2c6b;
+  flex-shrink: 0;
+}
+
+.app-header {
+  background: var(--coned-blue);
+  color: #fff;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.brand .egis {
+  color: #7ec4ef;
+  font-weight: 700;
+}
+
+.brand .maps {
+  font-weight: 700;
+}
+
+.map-icon {
+  font-size: 16px;
+}
+
+.page-tag {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.new-flag {
+  font-size: 9px;
+  background: #c8175d;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 700;
+  vertical-align: middle;
+  margin-left: 4px;
+}

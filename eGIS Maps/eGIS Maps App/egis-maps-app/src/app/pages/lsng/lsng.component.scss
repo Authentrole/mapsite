@@ -1,0 +1,44 @@
+.content {
+  position: absolute;
+  top: 3rem;
+  left: 0px;
+  width: 100% !important;
+  height: calc(100vh - 3rem);
+  // padding: 0.75rem;
+  overflow: auto;
+}
+
+.title {
+  /* color: #3485fd; */
+  /* font-size: 25px; */
+  /* font-size: 1.5rem; */
+  font-size: calc(0.85 * (1.5vh + 1.1vw)) !important;
+  margin-top: -5px;
+  /* margin-top: -3px; */
+}
+.logo {
+  /* height:35px; */
+  height: calc(1.5 * (0.5vh + 1.1vw)) !important;
+  margin-left: unset !important;
+}
+
+.app-logo {
+  /* height:40px; */
+  height: calc(2 * (0.5vh + 1.1vw)) !important;
+  margin-top: 0.25rem;
+}
+
+.buttonIcon {
+  /* margin: 0 3px; */
+  border: none !important;
+  background: none !important;
+  // font-size: calc(16px * 1.25);
+  font-size: calc(1*(.5vh + 1.1vw)) !important;
+  color: white;
+}
+
+.k-button-solid-base,
+.k-button-solid-base.k-active {
+  border: none !important;
+  background: none !important;
+}

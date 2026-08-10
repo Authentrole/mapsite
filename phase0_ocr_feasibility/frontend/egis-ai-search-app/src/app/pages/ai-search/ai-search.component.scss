@@ -1,0 +1,138 @@
+.ai-search-page-root {
+  height: 100%;
+  width: 100%;
+}
+
+.ai-search-wrapper {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  background-color: #f8f9fa;
+  overflow: hidden;
+  position: relative;
+}
+
+.chat-panel {
+  flex: 4;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e0e0e0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.chat-panel app-assistant {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.datasource-panel {
+  flex: 1;
+  min-width: 320px;
+  background: #ffffff;
+  border-left: 1px solid #e0e0e0;
+  overflow: hidden;
+  min-height: 0;
+  position: relative;
+}
+
+.datasource-panel app-datasource {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-close-btn {
+  display: none;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .ai-search-wrapper {
+    flex-direction: column;
+  }
+
+  .chat-panel {
+    flex: 7;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .datasource-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 85%;
+    min-width: 0;
+    z-index: 40;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.2);
+    transform: translateX(0);
+    transition: transform 0.25s ease-out;
+  }
+
+  .datasource-panel.mobile-collapsed {
+    transform: translateX(100%);
+  }
+
+  .mobile-close-btn {
+    display: flex;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 5;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.06);
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .mobile-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 25, 40, 0.35);
+    z-index: 30;
+  }
+
+  .mobile-floating-btns-container {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .mobile-fab,
+  .mobile-refresh-fab {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .mobile-fab {
+    background: #0d3b8c;
+    color: #fff;
+  }
+
+  .mobile-refresh-fab {
+    background: #28a745;
+    color: #fff;
+  }
+}

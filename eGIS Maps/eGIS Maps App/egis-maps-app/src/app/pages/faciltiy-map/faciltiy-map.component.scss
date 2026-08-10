@@ -1,0 +1,166 @@
+.pdf-viewer {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.pdf-viewer-title {
+  margin-bottom: 5px;
+
+  .title {
+    display: flex;
+    justify-content: center;
+    position: relative;
+  }
+
+  .header-cls-btn {
+    display: flex;
+    justify-content: end;
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 10px;
+  }
+}
+
+.pdf-viewer-body {
+  padding: 0;
+   height: calc(100vh - 5.5rem);
+  // overflow-y: scroll;
+}
+
+.card-container {
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 3rem);
+  gap: 2px;
+  z-index: 2;
+  // padding-bottom: 5px;
+}
+
+.pdf-container {
+  width: 100%;
+  display: flex;
+  gap: 5px;
+}
+
+.pdf-list-card {
+  // width: 23% !important;
+  width: 35% !important;
+  height: 100%;
+}
+
+.pdf-viewer-card {
+  // border-color:unset !important;
+  // width: 77% !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-color: #495057 !important;
+}
+
+.pdf-viewer {
+  height: 100%;
+  position: relative;
+}
+
+.btn-container {
+  display: flex;
+  gap: 2px;
+  justify-content: end;
+}
+
+.pdf-viewer-disabled {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.5;
+}
+
+.rd-btn {
+  border: 1px solid #a5a1a1cc;
+}
+
+.rd-hidden {
+  display: none !important;
+}
+
+.opn-pdf-btn {
+  font-size: small;
+  // padding: 5px 10px 5px 10px;
+  border: 1px solid #a5a1a1cc;
+}
+
+.header-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pdf-content {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.pdf-content-detail {
+  overflow-y: auto;
+  height: calc(100% - 2rem);
+  margin: 1px 0px 1px 0px;
+  // border: 1px solid #ccc;
+}
+
+.pdf-content-pager {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+
+.isShow-pdfViewer {
+  border-color: unset !important;
+  width: 100% !important;
+}
+
+
+.k-pager-sm {
+  padding-inline: unset !important;
+  padding-block: unset !important;
+}
+
+.k-pdf-viewer .k-page {
+  margin-top:0px !important;
+}
+
+.title {
+  /* color: #3485fd; */
+  /* font-size: 25px; */
+  /* font-size: 1.5rem; */
+  font-size: calc(0.85 * (1.5vh + 1.1vw)) !important;
+  margin-top: -5px;
+  /* margin-top: -3px; */
+}
+.logo {
+  /* height:35px; */
+  height: calc(1.5 * (0.5vh + 1.1vw)) !important;
+  margin-left: unset !important;
+}
+
+.app-logo {
+  /* height:40px; */
+  height: calc(2 * (0.5vh + 1.1vw)) !important;
+  margin-top: 0.25rem;
+}
+
+.buttonIcon {
+  /* margin: 0 3px; */
+  border: none !important;
+  background: none !important;
+  // font-size: calc(16px * 1.25);
+  font-size: calc(1*(.5vh + 1.1vw)) !important;
+  color: white;
+}
+
+.k-button-solid-base,
+.k-button-solid-base.k-active {
+  border: none !important;
+  background: none !important;
+}

@@ -1,0 +1,67 @@
+<kendo-card class="content">
+    <div style="width: 100%; display: flex; flex-direction: row;">
+        <div style="display: flex; flex-direction: column; width:60%;">
+            <div
+                style="display: flex; flex-direction: row; width: 100%; gap: 1rem; justify-content: center; align-items: center;">
+                <div style="display: flex; flex-direction: column;width:60%;">
+                    <kendo-label class="form-label" [for]="GlobalSearch" text="Global Search">
+                    </kendo-label>
+                    <kendo-switch style="font-size: 0.75rem;width:80%;height: 2rem;" class="global-search" #GlobalSearch onLabel="Off" offLabel="On"
+                        [(ngModel)]="isGlobalSearch" (valueChange)="globSearch($event)">
+                    </kendo-switch>
+                </div>
+                <div style="display: flex;  flex-direction: column;width:100%;" [ngClass]="{'rd-disabled': isGlobalSearch}">
+                    <kendo-label class="form-label" [for]="region" text="Region"></kendo-label>
+                    <kendo-dropdownlist #region [data]="regionfilteredList" [(ngModel)]="regionValue" [popupSettings]="{ popupClass : 'dropdwon-list-item'}" style="font-size: 0.75rem;width:100%;height: 2rem;"
+                        [filterable]="true" textField="region" valueField="region" (filterChange)="regionFilter($event)"
+                        (selectionChange)="regionChange($event)" (click)="getAllRegion()" [disabled]="controlsDisable">
+                    </kendo-dropdownlist>
+                </div>
+                <div style="display: flex; flex-direction: column;width:100%;" [ngClass]="{'rd-disabled': isGlobalSearch}">
+                    <kendo-label class="form-label" [for]="facility" text="Facility"></kendo-label>
+                    <kendo-dropdownlist #facility [data]="filteredFacilities" [(ngModel)]="facilityValue"  style="font-size: 0.75rem;width:100%;height: 2rem;"
+                        [filterable]="true" textField="modifiedName" valueField="name"
+                        (filterChange)="facilityFilter($event)" (selectionChange)="facilityChange($event)">
+                    </kendo-dropdownlist>
+                </div>
+                <div style="display: flex; flex-direction: column;width:100%;">
+                    <kendo-label class="form-label" text="PDF File Name">
+                    </kendo-label>
+                    <input class="pdf-input" id="searchText" autocomplete="off" style="font-size: 0.75rem;width: 90%;height: 2rem;padding:0.25rem;" type="text" placeholder="PDF File Name..." [(ngModel)]="pdfName" (keypress)="keyPress($event)"> 
+                    <!-- <kendo-textbox placeholder="PDF File Name" [(ngModel)]="pdfName">
+                        
+                    </kendo-textbox> -->
+                </div>
+                <div style="display: flex; flex-direction: column;">
+                    <button kendoButton style="margin-top: 1.5rem; font-size: 1.5rem;
+                    margin-left: -1rem;" iconClass="fas fa-search" title="Search"
+                        (click)="searchPdfFile()"></button>
+                </div>
+            </div>
+           
+            <div style="display: flex; justify-content: center;font-size: medium;">
+                @if(isGlobalSearch) {
+                <span *ngIf="!isBusy">*** For better performance, enter exact PDF file name
+                    to search ***</span>
+                }
+                <span *ngIf="isBusy">
+                    Finding PDF files...
+                    <kendo-loader></kendo-loader>
+                </span>
+                
+            </div>
+           
+        </div>
+        <div style="border-right: 1px solid #cccc;"></div>
+
+        <div class="nav-links">
+            @for(link of navLinks; track link.name; let i = $index){
+            <div class="nav-card" (click)="configService.openLink(link.url)">
+                <span class="fas fa-link" ></span>&nbsp;
+                <span class="form-label">{{link.name}}</span>
+            </div>
+            }
+        </div>
+    </div>
+</kendo-card>
+

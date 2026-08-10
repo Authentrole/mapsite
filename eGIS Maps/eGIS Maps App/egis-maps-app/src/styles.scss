@@ -1,0 +1,427 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+:host {
+  display: block;
+  // flex-direction: column;
+  height: 100vh;
+}
+
+:root {
+  font-size: calc(0.6 * (1.5vh + 1.1vw)) !important;
+}
+/* You can add global styles to this file, and also import other style files */
+.app-background {
+  margin: 0 !important;
+  font-size: calc(1.5 * (1.5vh + 1.1vw)) !important;
+}
+
+.k-card-header {
+  z-index: unrest !important;
+}
+
+// .header-bg {
+//   color: white !important;
+//   background-color: #020296 !important;
+// }
+
+kendo-svg-icon {
+  /* font-size: (1.25 * (.5vh + 1.1vw)) !important;  */
+  // width: calc(1.25 * (0.5vh + 1.1vw)) !important;
+  // height: calc(1.25 * (0.5vh + 1.1vw)) !important;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.k-drawer-mini .k-drawer {
+  flex-basis: 2.5rem !important; //calc(2.25 * (0.5vh + 1.1vw)) !important;
+}
+
+.k-drawer-expanded .k-drawer.k-drawer-start {
+  flex-basis: 16rem !important;// calc(14 * (0.5vh + 1.1vw)) !important;
+}
+
+.k-drawer-wrapper {
+      // width: 16rem !important;
+  width: unset !important;
+  height: 100% !important;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+}
+
+.form-label {
+  margin-bottom: 0px !important;
+  font-size: 0.85rem;
+}
+
+.ken-expansion {
+  padding: 0 !important;
+
+  .k-expander-content {
+    padding: 0 !important;
+  }
+
+  .k-expander-header {
+    padding: 3 !important;
+  }
+}
+
+.ken-li-view-item {
+  padding: 0.5rem;
+  // font-size: 16px;
+  border-bottom-color: lightgrey;
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+  width: 100%;
+}
+
+.ken-li-view {
+  height: 50vh;
+  width: 100%;
+}
+
+.card-width {
+  width: 100%;
+  height: 46vh;
+  overflow: scroll;
+}
+
+// .inner-card {
+//   width: 100% !important;
+// }
+
+/* expansion panel */
+.expansion-panel-container {
+  .expansion-panel {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+
+    .panel-header {
+      background-color: #f0f0f0;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .panel-content {
+      padding: 0;
+      transition: max-height 0.3s ease-out;
+      max-height: 0;
+      overflow-y: scroll;
+
+      &.expanded {
+        padding: 10px;
+        max-height: 55vh;
+        overflow-y: scroll;
+      }
+    }
+  }
+}
+
+.card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  // width: 100%;
+}
+
+.card-header {
+  background-color:#3f6791 !important;//#069bd7 !important;// #007bff !important;
+  color: #fff;
+  padding: 5px;
+  // font-weight: bold;
+}
+
+.card-body {
+  padding: 10px;
+}
+
+.exp-div {
+  display: flex;
+  gap: 10px;
+  min-width: 100%;
+  padding: 10px;
+  // overflow: scroll;
+}
+
+.star-icon-color {
+  color: #007bff;
+}
+
+.k-window-content {
+  // background: #f3f3f3 !important;
+  padding-block: unset !important; 
+  padding-inline: unset !important; 
+}
+
+ .k-input-inner {
+  &::placeholder {
+    font-size: smaller !important;
+  }
+}
+
+.k-window-titlebar{
+  padding: 5px;
+}
+
+.k-picker-solid {
+  border: 1px solid #8d8d8dcc !important;
+}
+
+
+.k-expander-header {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  border-radius: 10px;
+}
+
+.k-expander-title {
+  text-transform: unset;
+  font-weight: 500;
+}
+
+.rd-disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.k-popup {
+  border-color: #c3c3c3 !important;
+  // background-color: unset !important;
+  // background-color: #f4f4f4 !important;
+  // background-color: black;
+  // color: white;
+}
+
+.isActiveContent {
+  background-color: #007bff;
+  color: white;
+  border-radius: 5px;
+  padding-right: 0.25rem;
+}
+
+.k-window {
+  border-color: #afafaf;
+  color: #212529;
+  // background-color: rgb(235 234 234);
+  // height: 100%;
+  z-index: 2000;
+}
+
+.k-input {
+  border: 1px solid #8d8d8dcc !important;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.blinking-text {
+  animation: blink 1s infinite !important;
+  color: red;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.dropdwon-list-item{
+  font-size: 0.75rem;
+}
+
+.k-list-item{
+  font-size: 0.75rem !important;
+}
+
+.k-list-item-text{
+  font-size: 0.75rem !important;
+}
+
+.k-label{
+  // font-size: 0.75rem;
+}
+
+.k-pager-numbers-wrap select.k-dropdown-list, .k-pager-numbers-wrap select.k-dropdown, .k-pager-numbers-wrap select.k-dropdownlist {
+  width: 3em;
+}
+
+.k-pager-input .k-textbox, .k-pager-input .k-numerictextbox {  
+  width: 3em;
+}
+
+.pdf-input{
+  // background-color: $kendo-component-bg;
+  // border-radius: 10px;
+  // color: $kendo-component-text;
+  padding-left: 5px;
+  border-width: 1px;
+}
+
+.k-overlay{
+  z-index: unset;
+}
+
+.k-drawer{
+  flex: unset;
+}
+
+.k-dialog-wrapper{
+  height: unset !important;
+}
+
+.k-pdf-viewer .k-page {
+  margin-top:0px !important;
+}
+
+.errorHeading{
+  justify-content: center;
+    /* text-align: center; */
+    display: inline-flex;
+    align-items: center;
+}
+
+.errorIcon{
+  font-size:1.25rem;
+}
+
+$color-blu: #069bd7;
+
+.qlink{
+  cursor: pointer !important;
+  color: $color-blu;
+  text-decoration: underline;
+}
+
+a{
+  color: $color-blu !important;
+}
+.PDF-Glass{
+    height: 100%;
+    width: 100%;
+    background-color: transparent;
+    position: absolute;
+    // right: 0;
+    top: 1.85rem;
+    z-index: 10000000000000000000000; 
+}
+
+.PDF-Save-Btn{
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    height: 2.5rem;
+    // width: 75px;
+    background-color: #323639;
+    position: absolute;
+    left: calc(100% - 2.25rem);
+    right: 0.85rem;
+    top: 1.5rem;
+    z-index: 10000000000000000000000;   
+}
+
+.PDF-Save-Btn-2{
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    // height: 2.5rem;
+     height: 40px;
+    // width: 75px;
+    background-color: #323639;
+    position: absolute;
+    right: 10px;
+    left: calc(100% - 100px);
+    z-index: 999;
+    // z-index: 10000000000000000000000;   
+}
+
+.pdf-btn{
+  font-size: 1.15rem;
+  cursor:pointer;
+  padding-left: 0.25rem;
+  color: white;
+}
+
+.pdf-viewer-div{
+  width: 100%;
+  height: calc(100vh - 4.25rem);
+}
+
+.pdf-viewer-div2{
+  width: 100%;
+  height: calc(100vh - 3rem);
+}
+
+.k-switch-md {
+    width: 4rem !important;
+    height: 2rem !important;
+}
+
+.k-switch-track {
+    width: 3rem !important;
+    height: 2rem !important;
+}
+
+.k-switch-thumb {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+}
+
+.k-switch-md.k-switch-on .k-switch-thumb-wrap {
+    left: calc(100% - 1rem) !important;
+}
+
+.k-switch-md.k-switch-off .k-switch-thumb-wrap {
+    left: 1rem;
+}
+
+.wr-tooltip {
+  padding-left: 1rem !important;
+}
+
+// .k-tabstrip-content .k-active{
+//   display: flex !important;
+//   // width: 80% !important;
+// }
+
+// .k-tabstrip-items .k-link {
+//   color:var(--kendo-color-primary, #0d6efd);
+// }
+
+.k-tabstrip-items .k-item{
+      border: 1px solid gray !important;     
+      color: unset !important; 
+}
+
+.k-tabstrip-items-wrapper .k-item {  
+    border-top-left-radius: 1rem !important;
+    border-top-right-radius: 1rem !important;
+}
+
+.k-tabstrip-items-wrapper .k-item:active, .k-tabstrip-items-wrapper .k-item.k-active, .k-tabstrip-items-wrapper .k-item.k-selected {
+    background-color: #0d6efd !important;
+    // border-top-left-radius: 1rem !important;
+    // border-top-right-radius: 1rem !important;
+    color: #fff !important;
+}
+
+
+

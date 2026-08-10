@@ -1,0 +1,116 @@
+<div class="ai-assistant-container">
+  <div class="chat-header">
+    <div>
+      <div class="page-title">🤖 eGIS AI Assistant</div>
+      <div class="subheading">
+        Ask about map plates in plain English — e.g. "gas regulator maps in Westchester"
+        <span *ngIf="!aiAvailable" class="ai-unavailable-inline">
+          (AI unavailable — falling back to keyword search)
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-box">
+    <div class="chat-history" #chatHistory>
+      <div *ngIf="!messages.length" class="empty-state">
+        👋 Ask a question about the engineering map plates to get started.
+      </div>
+
+      <div
+        *ngFor="let msg of messages; trackBy: trackByMessageId"
+        class="chat-message"
+        [class.user]="msg.sender === 'user'"
+        [class.assistant]="msg.sender === 'assistant'"
+        [class.typing]="msg.isTyping"
+      >
+        <div class="message-content">
+          <div *ngIf="msg.sender === 'assistant'" class="message-sender">🤖 eGIS AI Assistant</div>
+
+          <div
+            class="message-text"
+            [innerHTML]="msg.sender === 'assistant' ? (msg.renderedHtml || msg.text) : msg.text"
+          ></div>
+
+          <div class="message-footer">
+            <div class="message-time">{{ msg.timestamp | date: 'short' }}</div>
+            <div *ngIf="msg.sender === 'assistant' && !msg.isTyping" class="feedback-buttons">
+              <button
+                kendoButton
+                fillMode="flat"
+                class="feedback-btn thumbs-up"
+                [class.active]="getFeedback(msg.id) === 'positive'"
+                [disabled]="hasFeedback(msg.id)"
+                (click)="provideFeedback(msg, 'positive')"
+                title="This response was helpful"
+              >
+                👍
+              </button>
+              <button
+                kendoButton
+                fillMode="flat"
+                class="feedback-btn thumbs-down"
+                [class.active]="getFeedback(msg.id) === 'negative'"
+                [disabled]="hasFeedback(msg.id)"
+                (click)="provideFeedback(msg, 'negative')"
+                title="This response was not helpful"
+              >
+                👎
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="lastSpeechError" class="speech-error">{{ lastSpeechError }}</div>
+    </div>
+  </div>
+
+  <div class="chat-input">
+    <div class="input-group">
+      <button
+        kendoButton
+        class="clear-chat-btn"
+        (click)="clearChat()"
+        [disabled]="isLoading"
+        title="Start new conversation"
+        *ngIf="!isMobile"
+      >
+        🔄
+      </button>
+
+      <button
+        kendoButton
+        class="clear-chat-btn mic-circle-btn"
+        [class.active]="isRecording"
+        [disabled]="isLoading || !speechSupported"
+        (click)="toggleMic()"
+        title="Voice search"
+        aria-label="Voice search"
+        *ngIf="!isMobile"
+      >
+        🎤
+      </button>
+
+      <kendo-textbox
+        [(ngModel)]="query"
+        placeholder="Ask your question..."
+        class="message-input"
+        [disabled]="isLoading"
+        (keydown)="onKeyPress($event)"
+      >
+      </kendo-textbox>
+
+      <button
+        kendoButton
+        class="send-button"
+        (click)="send()"
+        [disabled]="!query.trim() || isLoading"
+      >
+        Send
+        <kendo-loader size="small" *ngIf="isLoading"></kendo-loader>
+      </button>
+    </div>
+  </div>
+  <div class="ai-disclaimer">Disclaimer: AI generated content may be incorrect.</div>
+</div>

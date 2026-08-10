@@ -1,0 +1,202 @@
+<!-- @if(GridData && GridData.length > 0){ -->
+<kendo-grid #dataGrid="kendoGrid" [kendoGridBinding]="dataGridView" [rowClass]="RowCallback" [loading]="loading"
+  [skip]="skip" [pageSize]="pageSize" [pageable]="Pageable ? {
+      buttonCount: 5,
+      info: true,          
+      pageSizes: [5, 10, 20, 25, 50, 100],
+      previousNext: true
+      
+    } : false" [navigable]="['table', 'pager']" [sortable]="Sortable" [sort]="sort" [groupable]="false"
+  [reorderable]="false" [resizable]="Resizable" [filter]="filter" (filterChange)="filterChange($event)"
+  [ngStyle]="height" [filterable]="Filterable ? 'menu' : false">
+
+  <!-- (add)="addHandler($event)"
+    (edit)="editHandler($event)"
+    (remove)="removeHandler($event)" -->
+
+  <ng-template kendoGridToolbarTemplate>
+    <!-- <input placeholder="Search in all columns..." kendoTextBox (input)="onFilter($event)" [(ngModel)]="filterText" /> -->
+    <kendo-textbox #filter placeholder="Search in all columns..." kendoTextBox [(value)]="filterText"
+      (valueChange)="onFilter($event)" [clearButton]="true"></kendo-textbox>
+    <kendo-grid-spacer></kendo-grid-spacer>
+
+
+    @if(ToolbarButtons && ToolbarButtons.length > 0){
+    <ng-container *ngFor="let btn of ToolbarButtons">
+      @if(btn?.showText) {
+      <button kendoButton style="display: flex; align-items: center; justify-content: center;" fillMode="solid"
+        themeColor="primary" [title]="btn?.tooltip?.replace(/\|/g, GridName.replace(/_/, ' '))"
+        (click)="onToolBarButtonClick(btn?.id, dataGridView)">
+        {{ btn.text }}
+        <span class="k-icon k-font-icon k-i-{{btn.icon}}"
+          style="margin-left: 4px; vertical-align: middle; line-height: 1;"></span>
+      </button>
+      }@else {
+      <button kendoButton fillMode="flat" [icon]="btn.icon"
+        [title]="btn?.tooltip?.replace(/\|/g, GridName.replace(/_/g, ' '))"
+        (click)="onToolBarButtonClick(btn.id, dataGridView)">
+      </button>
+      }
+    </ng-container>
+    }
+
+    <!-- @if(ToolbarButtons && ToolbarButtons.length > 0){
+    <ng-container *ngFor="let btn of ToolbarButtons">
+      <button kendoButton fillMode="flat" [icon]="btn.icon" [title]="btn.tooltip.replace('|',GridName.replace('_',' '))"
+        (click)="onToolBarButtonClick(btn.id, dataGridView)">
+      </button>
+    </ng-container>
+    } -->
+
+    <button *ngIf="Filterable" type="button" kendoButton fillMode="flat" (click)="clearFilters()" icon="filter-clear"
+      title="Clear Filters">
+    </button>
+    <button *ngIf="CanExport" type="button" kendoGridExcelCommand fillMode="flat" icon="file-excel"
+      title="Export to Excel"></button>
+    <!-- Add show all/collapse all button here -->
+    <button *ngIf="GridName === 'Request_Access'" kendoButton fillMode="flat"
+      [iconClass]=" allExpanded ? 'fa fa-minus' : 'fa fa-plus'" title="Show All / Collapse All"
+      (click)="toggleShowAll()">
+      {{ allExpanded ? 'Collapse Details' : 'Expand Details' }}
+    </button>
+
+    <!-- Add show all/collapse all button here -->
+  </ng-template>
+
+  @if(ActionButtons && ActionButtons.length > 0){
+  <kendo-grid-command-column [width]="(ActionButtons.length * 30) < 100 ? 100 : (ActionButtons.length * 30)"
+    [locked]="true" [style]="{'padding-top':'0px','vertical-align': 'top'}">
+    <ng-template kendoGridHeaderTemplate>
+      <div>Action</div>
+      <!-- @if(ActionButtons.length > 1){
+      <div>Action</div>
+      }@else {
+      <div>{{ActionButtons[0].text}}</div>
+      } -->
+    </ng-template>
+    <ng-template kendoGridCellTemplate let-dataItem>
+      <div style="display: flex; align-items: center; justify-content:center; margin-top: 0.25rem;gap: 0.5rem;">
+        <ng-container *ngFor="let btn of ActionButtons">
+          @if(btn.checkForActive){
+          <button kendoButton [icon]="btn.icon" [title]="btn?.tooltip?.replace(/\|/g,GridName.replace(/_/g,' '))"
+            *ngIf="dataItem.IsActive == 1 || dataItem.isActive == 1" (click)="onActionButtonClick(btn.id, dataItem)">
+            <!-- {{ btn.text }} -->
+          </button>
+          }
+          @else if(btn.checkForVisibility){
+          <button kendoButton [icon]="btn.icon" [title]="btn?.tooltip?.replace(/\|/g,GridName.replace(/_/g,' '))"
+            *ngIf="showButton(btn, dataItem)" (click)="onActionButtonClick(btn.id, dataItem)">
+            <!-- {{ btn.text }} -->
+          </button>
+          }
+          @else if(btn.id === "jobaid"){
+          <button *ngIf="!!dataItem?.jobAid" kendoButton [icon]="btn.icon"
+            [title]="btn?.tooltip?.replace(/\|/g,GridName.replace(/_/g,' '))"
+            (click)="onActionButtonClick(btn.id, dataItem)">
+          </button>
+          }
+          @else {
+          <button kendoButton [icon]="btn.icon" [title]="btn?.tooltip?.replace(/\|/g,GridName.replace(/_/g,' '))"
+            (click)="onActionButtonClick(btn?.id, dataItem)">
+            <!-- {{ btn.text }} -->
+          </button>
+          }
+
+        </ng-container>
+      </div>
+    </ng-template>
+  </kendo-grid-command-column>
+  }
+
+  <kendo-grid-column *ngFor="let columnConfig of GridColumns;index as ColInd;" [width]="columnConfig.width"
+    [field]="columnConfig.name" [title]="columnConfig.title" [locked]="ColInd == 0 && GridColumns.length > 5"
+    [hidden]="columnConfig.hidden"
+    [style]="columnConfig.name == 'comments' ? {'padding-top':'0px','width':'{{columnConfig.width}}px', 'vertical-align': 'top','word-wrap':'break-word','white-space': 'break-spaces'} : {'padding-top':'0px','width':'{{columnConfig.width}}px', 'min-width':'125px', 'vertical-align': 'top'}">
+    <ng-template kendoGridFilterMenuTemplate let-column="column" let-filter="filter" let-filterService="filterService">
+      <egis-grid-filter [isPrimitive]="true" [field]="column.field" [config]="columnConfig"
+        [filterService]="filterService" [currentFilter]="filter" [data]="distinctPrimitive(column.field)">
+      </egis-grid-filter>
+    </ng-template>
+    <ng-template kendoGridCellTemplate let-dataItem>
+      @if((dataItem[columnConfig.name] != null && dataItem[columnConfig.name] != undefined &&
+      dataItem[columnConfig.name] !== "") || dataItem[columnConfig.name] == false){
+      <!-- @if(dataItem[columnConfig.name].trim() != ''){ -->
+      @if(columnConfig.isLink){
+      <a href="{{BaseURLs[columnConfig.name]}}{{dataItem[columnConfig.name]}}"
+        target="_blank">{{dataItem[columnConfig.name]}}</a>
+      }
+      @else if(columnConfig.isDate){
+      <span>{{dataItem[columnConfig.name] | date: formatDate(columnConfig, dataItem)}}</span>
+      }
+      @else if(columnConfig.badge){
+      @if(columnConfig.badgeStyles && columnConfig.badgeStyles.length > 0){
+      @for(badgeStyle of columnConfig.badgeStyles; track $index){
+      @if(badgeStyle.action == PageAction && badgeStyle.value== dataItem[columnConfig.name]){
+      <span [class]="badgeStyle.class">{{badgeStyle.text}}</span>
+      }
+      }
+      }
+      @else {
+      <span>{{dataItem[columnConfig.name]}}</span>
+      }
+      }
+      @else if(columnConfig.delimiter){
+      @if(dataItem[columnConfig.name] !== ""){
+      <ul>
+        @for(item of dataItem[columnConfig.name].split(columnConfig.delimiter); track $index){
+        @if($index < 5 || dataItem.showMore){ <li>
+          @if(columnConfig.delimiterStyles && columnConfig.delimiterStyles.length > 0){
+          @for(styleIndicator of columnConfig.delimiterStyles; track $index){
+          @if(item.indexOf(styleIndicator.delimiter) > 0 && item.indexOf(styleIndicator.indicator) > 0){
+          <span [style.color]="styleIndicator.color">
+            {{item.split(styleIndicator.delimiter)[0].trim()}}
+          </span>
+          }
+          }
+          } @else {
+          <span [innerHTML]="item"></span>
+          }
+          </li>
+          }
+          } @empty {
+          <span>{{dataItem[columnConfig.name]}}</span>
+          }
+      </ul>
+      <!-- Show toggle button only if more than 5 items -->
+      <!-- Show toggle link only if more than 5 items -->
+      <div class="show-more-container"
+        *ngIf="dataItem[columnConfig.name].split(columnConfig.delimiter).length > 5 && columnConfig.name === 'details'">
+        <span (click)="toggleShowMoreForRow(dataItem)"
+          style="color: #0078d4; cursor: pointer; text-decoration: underline;">
+          {{ dataItem.showMore ? 'Show Less' : 'Show More' }}
+        </span>
+      </div>
+      }
+      }
+      @else if(columnConfig.isActive){
+      @if(dataItem.IsActive != 1 && dataItem.isActive != 1){
+      <span style="background-color: red;color:white">{{dataItem[columnConfig.name]}}</span>
+      }
+      @else{
+      <span>{{dataItem[columnConfig.name]}}</span>
+      }
+      }
+      @else{
+      <span>{{dataItem[columnConfig.name]}}</span>
+      }
+      }
+      @else if(dataItem[columnConfig.alt]){
+      <span>{{dataItem[columnConfig.alt]}}</span>
+      }
+    </ng-template>
+  </kendo-grid-column>
+
+  <kendo-grid-excel #excelExport fileName="{{FileName}}.xlsx" [fetchData]="exportData">
+    <kendo-excelexport-column *ngFor="let columnConfig of GridColumns;index as ColInd;" [field]="columnConfig.name"
+      [title]="columnConfig.title">
+    </kendo-excelexport-column>
+  </kendo-grid-excel>
+</kendo-grid>
+<!-- } -->
+
+<!-- <div kendoDialogContainer></div> -->

@@ -1,0 +1,245 @@
+
+
+
+<kendo-card style="width: 100%;">
+    <kendo-card-body >
+        <div class="main-content">
+            <!-- <kendo-expansionpanel style="margin-top: 10px; margin-bottom: 10px" class="ken-expansion" title="Notification"
+                [expanded]="notificationExpandPanel" *ngIf="appUpdates.length > 0 || notifications.length > 0">
+                <div class="card-container" *ngIf="appUpdates.length > 0 || notifications.length > 0">
+                    <kendo-card style="width: 100%;" *ngIf="notifications.length > 0">
+                        <kendo-card-body *ngIf="notifications.length > 0" style="padding:0px !important;">
+                            <kendo-scrollview #sv [data]="notifications" [width]="width" [height]="height" [arrows]="arrows"
+                                [pageable]="pageable" [endless]="endless" [pagerOverlay]="pagerOverlay">
+                                <ng-template let-item="item">
+                                    <div style="width:100%;">
+                                        <kendo-card style="width:100%;justify-content: left;border: none;">
+                                            <kendo-card-body style=" flex:none;">
+                                                <kendo-label style="text-align: center;text-wrap:wrap;">
+                                                    <span *ngIf="item.isCompleted=='0'"
+                                                        style="color:red;"><strong>{{item.title}}</strong> :
+                                                        On {{formatText(item.commodities)}} in {{formatText(item.environments)}}
+                                                        environment(s)
+                                                        from {{item.fromDate | date: 'EEEE MM/dd/yyyy hh:mm a'}}
+                                                        to {{item.toDate | date: 'EEEE MM/dd/yyyy hh:mm a'}}
+                                                    </span>
+                                                    <span *ngIf="item.isCompleted=='1'"
+                                                        style="color:green;"><strong>{{item.title}}
+                                                            - Completed</strong> :
+                                                        On {{formatText(item.commodities)}} in {{formatText(item.environments)}}
+                                                        environment(s)
+                                                        from {{item.fromDate | date: 'EEEE MM/dd/yyyy hh:mm a'}}
+                                                        to {{item.toDate | date: 'EEEE MM/dd/yyyy hh:mm a'}}
+                                                    </span>
+                                                </kendo-label>
+        
+                                                <hr style="color: gray; opacity: 0.1;" />
+                                                <div style="width: 100%; display: inline-flex;">
+                                                    <kendo-card *ngFor='let commodity of item.commodities.split(",") ;'
+                                                        style="width: 100%; display: inline-flex;">
+                                                        <kendo-card-header style="text-align: center;"
+                                                            *ngIf="item.isCompleted == 0">Planned status of {{commodity.trim()}}
+                                                            applications during outage</kendo-card-header>
+                                                        <kendo-card-header style="text-align: center;"
+                                                            *ngIf="item.isCompleted == 1">Current status of {{commodity.trim()}}
+                                                            applications</kendo-card-header>
+                                                        <kendo-card-body
+                                                            style="width: 100%; display: inline-flex;justify-content: space-around;">
+                                                            <div *ngFor='let app of GetCommodityApps(item.applications,commodity);'
+                                                                style="text-align: center;">
+                                                                <kendo-avatar #{{app}}
+                                                                    title="{{app.replace('|un',' - Unavailable').replace('|av',' - Available').replace('|pa',' - Partially Available')}}"
+                                                                    class="avatar-icon-sm fs-sm-{{(app.split('|')[0] | titlecase).replace('Arcfm','').trim().split(' ')[0].toLowerCase().trim()}}"
+                                                                    iconClass='fas fa-{{(app.split("|")[0] | titlecase).replace("Arcfm","").replace("Mobile", "Mobile-alt").replace("Web","Globe").trim().split(" ")[0].toLowerCase().trim()}}'
+                                                                    [themeColor]="item.isCompleted==1 ? 'success' : app.split('|')[1]=='un' ? 'error' : app.split('|')[1]=='pa' ? 'warning' : 'success'"
+                                                                    size="small"></kendo-avatar>
+                                                                <br />
+                                                                <kendo-label for={{app}}
+                                                                    style="text-align:center;font-size: 12px;text-wrap: wrap;">
+                                                                    {{app.split('|')[0]}}
+                                                                    <br />
+                                                                    {{item.isCompleted == 1 ? 'Available' : app.split('|')[1]=='un' ? 'Unavailable' : app.split('|')[1]=='av' ? 'Available' : 'Partially Available'}}
+        
+                                                                </kendo-label>
+                                                            </div>
+                                                        </kendo-card-body>
+                                                    </kendo-card>
+                                                </div>
+                                            </kendo-card-body>
+                                        </kendo-card>
+                                    </div>
+                                </ng-template>
+                            </kendo-scrollview>
+                        </kendo-card-body>
+        
+                        <kendo-card-footer style="display: inline-flex;height: 50px;">
+                            <div style="display: inline-flex;justify-content: space-evenly; width: 40%;">
+                                <span style="display: inline-flex;"><span
+                                        style="display:block; margin-top: 3px; width:15px;height:15px;border-radius:100%;background-color:green;"></span>&nbsp;Available</span>
+                                <span style="display: inline-flex;"><span
+                                        style="display:block; margin-top: 3px;  width:15px;height:15px;border-radius:100%;background-color:red;"></span>&nbsp;Unavailable</span>
+                                <span style="display: inline-flex;"><span
+                                        style="display:block; margin-top: 3px;  width:15px;height:15px;border-radius:100%;background-color:orange;"></span>&nbsp;Partially
+                                    available</span>
+                            </div>
+                        </kendo-card-footer>
+                    </kendo-card>
+                    <span *ngIf="appUpdates.length > 0" style="display: block; height: 10px; margin-top: 10px;">
+                        <marquee width="100%" direction="left">
+                            <strong>{{this.appUpdateMsg}}</strong>
+                        </marquee>
+                    </span>
+                </div>
+            </kendo-expansionpanel> -->
+        
+        <!-- 
+            @if(showExpandPanel) {
+             <kendo-expansionpanel style="margin-top: 10px; margin-bottom: 10px" class="ken-expansion mb-2"
+                title="Search Results" [expanded]="chartExpandPanel">
+                <div class="exp-div">
+                    <div class="card" *ngIf="pdfList">
+                        <kendo-listview class="ken-li-view" [kendoListViewBinding]="pdfList" [pageSize]="pageSize"
+                            containerClass="k-d-flex k-flex-col k-flex-nowrap">
+                            <ng-template kendoListViewItemTemplate let-dataItem="dataItem" let-isLast="isLast">
+                                <div style="border: 1px solid #ccc; cursor: pointer;" class="ken-li-view-item" [class.last]="isLast" (click)="routeUrl(dataItem)">
+                                    {{ loadFiles(dataItem.file) }}
+                                </div>
+                            </ng-template>
+                        </kendo-listview>
+                        <kendo-datapager [style.width.%]="100" [pageSize]="pageSize" [skip]="skip" [total]="totalCount" type="input"
+                            (pageChange)="onPageChange($event)">
+                        </kendo-datapager>
+                    </div>
+                    <div style="height: 130px;" *ngIf="!pdfList && !chartExpandPanel">
+                        <div class="pdf-viewer-disabled">There is No Files.</div>
+                    </div>
+                </div>
+            </kendo-expansionpanel>
+            } -->
+        
+            <!-- @if(toggleOutages) { -->
+                <app-notifications #notifications [toggleNotifications]="toggleOutages"></app-notifications>
+                <!-- } -->
+    
+                <!-- @if(PDFList) {  -->
+                <app-search-result #searchResults [PDFList]="PDFList"></app-search-result>
+                <!-- } -->
+
+            <!-- <app-notifications></app-notifications>
+            <app-search-result #searchResults [PDFList]="PDFList"></app-search-result> -->
+            
+            <!-- @if(selectedMapsCommodity === "electric") {
+            <app-electric></app-electric>
+            } @else if(selectedMapsCommodity === "gas") {
+            <app-gas></app-gas>
+            } @else if(selectedMapsCommodity === "steam") {
+            <app-steam></app-steam>
+            } @else if(selectedMapsCommodity === undefined) {
+            <app-electric></app-electric>
+            } -->
+
+            <app-commodity-facility #commodityFacility [commodity]="selectedMapsCommodity"></app-commodity-facility>
+
+        </div>
+        
+    </kendo-card-body>
+</kendo-card>
+
+<!-- <ng-template #windowTitleBar let-win>
+    <span class="k-window-title">ConEdison Facility Map</span>
+    <button kendoWindowRestoreAction [window]="win"></button>
+    <button kendoWindowMaximizeAction [window]="win"></button>
+    <button kendoWindowCloseAction [window]="win"></button>
+  </ng-template> -->
+<div kendoWindowContainer></div>
+
+<!-- <kendo-card class="k-card">
+    <div class="container-fluid">
+        <div class="row pb-2">
+            <div class="col-md-12 col-12">
+                <div class="row">
+                    <div class="col-2">
+                        <div class="row">
+                            <div class="col-12">
+                            </div>
+                            <div class="col-12">
+                                        <kendo-label class="form-label" [for]="isGlobalSearch" text="Global Search">
+                                        </kendo-label>
+                                <kendo-switch class="global-search" #isGlobalSearch onLabel="Off" offLabel="On"
+                                    [(ngModel)]="isGlobalSearch">
+                                </kendo-switch>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <kendo-label class="form-label" [for]="region" text="Region"></kendo-label>
+                        <kendo-dropdownlist #region [data]="regionfilteredList" [(ngModel)]="regionValue"
+                            [filterable]="true" textField="region" valueField="code"
+                            (filterChange)="regionFilter($event)" (selectionChange)="regionChange($event)">
+                        </kendo-dropdownlist>
+                    </div>
+                    <div class="col-3">
+                        <kendo-label class="form-label" [for]="facility" text="Facility"></kendo-label>
+                        <kendo-dropdownlist #facility [data]="filteredFacilities" [(ngModel)]="facilityValue"
+                            [filterable]="true" textField="name" valueField="url"
+                            (filterChange)="facilityFilter($event)">
+                        </kendo-dropdownlist>
+                    </div>
+                    <div class="col-3">
+                        <kendo-label class="form-label" text="PDF File Name">
+                        </kendo-label>
+                        <kendo-textbox placeholder="Search PDF File" [(ngModel)]="pdfName"></kendo-textbox>
+                    </div>
+                    <div class="col-1 pb-0 py-4">
+                        <kendo-button iconClass="fas fa-search" title="Search" (click)="searchPdfFile()"></kendo-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row pb-2">
+            <div class="col-md-12 col-12">
+                <div class="row">
+                    <div class="d-flex">
+                        @for(link of navLinks; track link.name){
+                        <div class="col-2">
+                            <div class="align-items-center d-flex justify-content-center mx-1 nav-card"
+                                (click)="configService.openLink(link.url)">
+                                <span class="k-icon k-font-icon k-i-hyperlink hyperlink-icon"></span>
+                                <span class="form-label">{{link.name}}</span>
+                            </div>
+                        </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</kendo-card>
+
+<kendo-expansionpanel class="ken-expansion mb-2" title="Search Results" expandIcon="fa fa-plus"
+    collapseIcon="fa fa-minus" [expanded]="chartExpandPanel" *ngIf="chartExpandPanel">
+    <div class="col-md-12 col-12">
+        <div class="row">
+            <div class="d-flex card-width">
+                <kendo-listview class="ken-li-view" [kendoListViewBinding]="pdfList" [pageSize]="pageSize"
+                    containerClass="k-d-flex k-flex-col k-flex-nowrap">
+                    <ng-template kendoListViewItemTemplate let-dataItem="dataItem" let-isLast="isLast">
+                        <div class="ken-li-view-item" [class.last]="isLast"
+                            (click)="configService.openLink(dataItem.file)">
+                            {{ dataItem.file }}
+                        </div>
+                    </ng-template>
+                </kendo-listview>
+            </div>
+            <kendo-datapager [style.width.%]="100" [pageSize]="pageSize" [skip]="skip" [total]="totalCount"
+                (pageChange)="onPageChange($event)">
+            </kendo-datapager>
+        </div>
+    </div>
+</kendo-expansionpanel> -->
+
+
+<!-- <div class="card-header" (click)="togglePanel()">
+        <em class="fas fa-chevron-down d-flex justify-content-center mx-1"></em>
+    </div> -->
+<!-- [ngClass]="{'expanded': isExpanded}"  card-content -->

@@ -1,0 +1,11 @@
+{
+    "layout_Apps":["DXI","Microstation"],
+    "muni_borough": ["R","S","W"],
+    "ad_groups": ["dl - eGIS Viewer - IT Ops","BQ_Layout_Designers","M_Layout_Designers","WX_Layout_Designers","SI_Layout_Designers"],
+    "layout_limit": 50,
+    "wr_format_error_message": "Each entry must follow the format: 5 digits, then a '/' or '-' or ',', then 5 digits (e.g., 12345/67890).",
+    "new_layout_number_message_bkp": "Make sure to copy the layout number - it won't be available once you close this page.",
+    "limit_warning_msg": "Warning: You are nearing the Sequence Number limit for {b} {l}",
+    "limit_error_msg": "Error: You have reached the Sequence Number limit for {b} {l}",
+    "edit_tooltip":  "Add new part(s) / update WR number(s)"
+}

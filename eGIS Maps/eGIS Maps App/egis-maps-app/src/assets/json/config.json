@@ -1,0 +1,13 @@
+[
+    {            
+        "api_url": "https://localhost:44340/",
+        "uam_api_url":"https://egissupportuat.conedison.net/server/support/",
+        "file_url":"https://mapstest.conedison.net/pdf/",
+        "file_format":"pdf",
+        "announcement_notification_type":"Announcement",
+        "use_default_viewer":false,
+        "viewer_mode": "tab",
+        "app_env": " - Test",
+        "ai_search_api_url": "http://127.0.0.1:8000/"
+    }
+]

@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32901.82
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MapsAPI", "MapsAPI.csproj", "{9AB643EA-A989-4737-BA3F-FCE7F5F83CBD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "eGISUtils", "eGISUtils", "{66093530-74E7-4FB8-B2B7-E0C83A12B3F2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ADUtil", "..\eGISUtils\ADUtils\ADUtil.csproj", "{4BF9A978-B074-4DD1-8B90-339E85541201}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogUtil", "..\eGISUtils\LogUtil\LogUtil.csproj", "{AE5518DA-1E90-4914-BA36-125D0D19FCCB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9AB643EA-A989-4737-BA3F-FCE7F5F83CBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AB643EA-A989-4737-BA3F-FCE7F5F83CBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AB643EA-A989-4737-BA3F-FCE7F5F83CBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AB643EA-A989-4737-BA3F-FCE7F5F83CBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4BF9A978-B074-4DD1-8B90-339E85541201}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BF9A978-B074-4DD1-8B90-339E85541201}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BF9A978-B074-4DD1-8B90-339E85541201}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BF9A978-B074-4DD1-8B90-339E85541201}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE5518DA-1E90-4914-BA36-125D0D19FCCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE5518DA-1E90-4914-BA36-125D0D19FCCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE5518DA-1E90-4914-BA36-125D0D19FCCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE5518DA-1E90-4914-BA36-125D0D19FCCB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4BF9A978-B074-4DD1-8B90-339E85541201} = {66093530-74E7-4FB8-B2B7-E0C83A12B3F2}
+		{AE5518DA-1E90-4914-BA36-125D0D19FCCB} = {66093530-74E7-4FB8-B2B7-E0C83A12B3F2}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4B6D8EB5-6412-4690-AE9A-CEDD28871A1E}
+	EndGlobalSection
+EndGlobal

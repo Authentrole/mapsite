@@ -1,0 +1,80 @@
+[    
+    {
+        "name" : "Manhattan",
+        "items" : [
+            {
+                "name" : "M&S Plate",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_G_M_and_S&PDFTYPE=COLOR"
+            },
+            {
+                "name" : "Regulator Plate",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_G_REG_PLATE"
+            }
+        ]
+    },
+    {
+        "name" : "Bronx",
+        "items" : [
+            {
+                "name" : "M&S Plate",
+                "url" : "pages/map-display.html?CSO=X&FACILITY=PDF_G_M_and_S&PDFTYPE=COLOR"
+            },
+            {
+                "name" : "Regulator Plate",
+                "url" : "pages/map-display.html?CSO=X&FACILITY=PDF_G_REG_PLATE"
+            }
+        ]
+    },
+    {
+        "name" : "Queens",
+        "items" : [
+            {
+                "name" : "M&S Plate",
+                "url" : "pages/map-display.html?CSO=Q&FACILITY=PDF_G_M_and_S&PDFTYPE=COLOR"
+            },
+            {
+                "name" : "Regulator Plate",
+                "url" : "pages/map-display.html?CSO=Q&FACILITY=PDF_G_REG_PLATE"
+            }
+        ]
+    },
+    {
+        "name" : "Westchester",
+        "items" : [
+            {
+                "name" : "M&S Plate",
+                "url" : "pages/map-display.html?CSO=W&FACILITY=PDF_G_M_and_S&PDFTYPE=COLOR"
+            },
+            {
+                "name" : "Regulator Plate",
+                "url" : "pages/map-display.html?CSO=W&FACILITY=PDF_G_REG_PLATE"
+            }
+        ]
+    },
+    {
+        "name" : "General",
+        "items" : [            
+            {
+                "name" : "Adept Layout",
+                "url" : "https://adept.conedison.net/synergis.webapp/#/login"
+            },
+            {
+                "name" : "eGIS ArcFM Web",
+                "url" : "https://egisarcfmweb.conedison.net/ArcFMWebViewer413/index.html?viewer=Gas.ArcFMWeb",
+                "isNew":true
+            },
+            {
+                "name" : "Gas General Mains",
+                "url" : "https://egisarcfmweb.conedison.net/ArcFMWebViewer413/index.html?viewer=Gas_GeneralMains.ArcFMWeb",
+                "isNew":true
+            },
+            {
+                "name" : "Gas OMS",
+                "url" : "https://egisarcfmweb.conedison.net/ArcFMWebViewer413/Index.html?viewer=EGIS_OMS.ArcFMWeb#",
+                "isNew":true
+            }
+            
+            
+        ]
+    }
+]

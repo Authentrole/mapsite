@@ -1,0 +1,12 @@
+<kendo-appbar style="border-top: 1px solid #cccc;" position="bottom" [themeColor]="this.coreService.theme"
+    positionMode="fixed">
+    <div style="width: 100%; display: flex; justify-content: space-between;margin-top: -5px;">
+        <div class="main-footer" style="font-size:0.75rem;margin-top: 5px;">
+            Copyright &copy; 2024 <strong>ConEdison</strong>
+            All rights reserved.
+        </div>
+        <div>
+            <span *ngIf="authorizationService.AuthenticatedUserName" style="font-size:0.75rem;" class="username"><i class="fas fa-user"></i>&nbsp;{{authorizationService.AuthenticatedUserName}}</span>
+        </div>
+    </div>
+</kendo-appbar>

@@ -1,0 +1,75 @@
+<div class="sources-panel">
+  <div class="sources-header">
+    <div class="header-title">
+      <h3>📚 Data Sources</h3>
+      <p class="sources-subtitle">Map plates matched by the assistant</p>
+    </div>
+    <div class="tag-bar" *ngIf="contentTypes.length > 0">
+      <button
+        class="tag-chip"
+        [ngStyle]="
+          !activeContentType
+            ? { 'background-color': '#4a47a3', border: '1px solid #4a47a3', color: '#fff' }
+            : { 'background-color': 'rgba(74,71,163,0.12)', border: '1px solid #4a47a3', color: '#4a47a3' }
+        "
+        (click)="setContentType(null)"
+        title="Show all"
+      >
+        All ({{ rawResults.length }})
+      </button>
+      <button
+        class="tag-chip"
+        *ngFor="let ct of contentTypes"
+        (click)="setContentType(ct)"
+        [title]="ct"
+        [ngStyle]="getTagStyles(ct)"
+      >
+        {{ ct }} ({{ contentTypeCounts[ct] }})
+      </button>
+    </div>
+  </div>
+  <div class="sources-list">
+    <div *ngIf="filtered.length === 0" class="no-sources">
+      <kendo-icon name="folder" [size]="'xxxlarge'" style="opacity: 0.3"></kendo-icon>
+      <div class="no-sources-title">No results</div>
+      <div class="no-sources-subtitle">Try another question.</div>
+    </div>
+
+    <div
+      *ngFor="let item of filtered; trackBy: trackByPlate"
+      class="source-item"
+      [ngStyle]="getCardAccentStyle(item)"
+      (click)="open(item)"
+      [title]="item.plateId"
+    >
+      <div class="source-thumb">
+        <img [src]="thumbUrl(item)" alt="plate crop" loading="lazy" />
+      </div>
+      <div class="source-body">
+        <div class="source-header">
+          <div class="source-info">
+            <div class="source-title">{{ item.plateId }}</div>
+            <div class="source-meta">
+              <span
+                class="source-type"
+                [ngStyle]="{ 'background-color': getContentTypeColor(item.facilityType), color: '#fff' }"
+                >{{ item.facilityType || 'Plate' }}</span
+              >
+              <span class="source-id">{{ item.region }}{{ item.regionCode ? ' (' + item.regionCode + ')' : '' }}</span>
+            </div>
+          </div>
+          <div class="relevance-badge" *ngIf="item.idMatch">ID match</div>
+        </div>
+        <p class="source-excerpt">
+          {{ item.utility }} &middot; {{ item.pages.length }} page{{ item.pages.length > 1 ? 's' : '' }} matched
+          <ng-container *ngIf="bestPage(item) as bp">
+            &middot; best score {{ bp.score ?? '—' }}
+          </ng-container>
+        </p>
+        <div class="source-footer">
+          <div class="source-updated">Open link to view document</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

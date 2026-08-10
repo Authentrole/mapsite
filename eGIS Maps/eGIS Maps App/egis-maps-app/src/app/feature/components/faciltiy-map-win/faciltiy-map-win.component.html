@@ -1,0 +1,134 @@
+<kendo-card class="pdf-viewer" style="height: 100% !important;">
+    <kendo-card-header *ngIf="!canSearch" style="padding: 5px;">
+        <div style="display: inline-flex; width: 100%; gap: 10px;">
+            <span style="width: 60%;">{{facilityMapPath ? facilityMapPath.replace('>>','>') : saveFileName}}</span>
+            <div style="margin-top: 10px;
+                display: flex;
+                flex-direction: row;
+                width: 40%;
+                justify-content: right;
+                align-items: center;">
+                    <kendo-label class="form-label" [for]="PDF_Viewer" text="View PDF in Edge Viewer">
+                    </kendo-label>&nbsp;
+                    <kendo-switch style="font-size: 0.75rem;" #PDF_Viewer onLabel="Yes" offLabel="No"
+                    [(ngModel)]="this.pdfViewer" (valueChange)="setPDFViewer()"
+                        >
+                    </kendo-switch>
+                </div>
+                <button class="opn-pdf-btn" kendoButton  (click)="closeWindow()">Close</button>                             
+        </div>
+    </kendo-card-header>
+    <!-- <kendo-card-header class="pdf-viewer-title">
+        <div class="title">
+            <span class="k-font-bold">{{title}}</span>
+        </div>
+        <div class="header-cls-btn">
+            <kendo-button iconClass="fas fa-times" title="Close" (click)="closeDialog()">
+            </kendo-button>
+        </div>
+    </kendo-card-header> -->
+
+    <kendo-card-body class="pdf-viewer-body" style="height: 95%;">
+        <div class="card-container">
+            <div class="pdf-container">
+                @if(canSearch && expanded) {
+                <kendo-card class="pdf-list-card">
+                    <kendo-card-header style="border-bottom: 1px solid #ccc;">
+                        <!-- <div class="header-content" style="border-bottom: 1px solid #ccc;">
+                        <span style="text-align: center;">Main Menu</span>
+                    </div> -->                    
+                        <div class="header-content">
+                            <span style="text-align: center; font-size: smaller;">{{pdfRefTo}}</span>                                                       
+                        </div>
+                        <div class="header-content" style="margin-top: 10px;">
+                            <!-- <kendo-textbox class="ken-textbox" placeholder="PDF File Name" [(ngModel)]="pdfName">
+                            </kendo-textbox> -->
+                            <input class="pdf-input" id="searchText" autocomplete="off" type="text" style="font-size: 0.75rem;width: 90%;height: 35px;" placeholder="PDF File Name..." [(ngModel)]="pdfName" (keypress)="keyPress($event)">
+                        </div>
+                        <div style="display: flex; justify-content: space-evenly; align-items: center; margin-top: 5px;"
+                            [ngClass]="{'rd-hidden': !canShowPDFColor}">
+                            <div [ngClass]="{'rd-disabled': !hasMono }">
+                                <input class="rd-btn" type="radio" #mono name="pdf_color" value="MONO" [checked]="isMono"
+                                    kendoRadioButton (change)="radioChangeEvent($event)" />
+                                <kendo-label class="k-radio-label" style="font-size: smaller;" [for]="mono"
+                                    text="Monochrome">
+                                </kendo-label>
+                            </div>
+                            <div [ngClass]="{'rd-disabled': !hasColor }">
+                                <input class="rd-btn" type="radio" #color name="pdf_color" value="COLOR"
+                                [checked]="isColor"
+                                    kendoRadioButton (change)="radioChangeEvent($event)" />
+                                <kendo-label class="k-radio-label" style="font-size: smaller;" [for]="color"
+                                    text="Color">
+                                </kendo-label>
+                            </div>
+                        </div>
+                        <div class="header-content" style="margin-top: 10px; gap: 10px;">
+                            <button class="opn-pdf-btn" kendoButton [themeColor]="'primary'" (click)="searchPdfFile()">Submit</button>
+                            <button class="opn-pdf-btn" kendoButton  (click)="closeWindow()">Close</button>
+                            <button class="opn-pdf-btn" title="Hide Search Panel" kendoButton [themeColor]="'secondary'" (click)="expanded=!expanded;">Hide</button>
+                            <!-- <span style="cursor: pointer;align-content: center;" title="Toggle Search Panel" (click)="isShow=!isShow;">                        
+                                <span style="font-size:1.5rem;" *ngIf="expanded" class="k-icon k-font-icon k-i-arrow-chevron-left"></span>
+                                <button class="opn-pdf-btn" kendoButton [themeColor]="'secondary'" (click)="isShow=!isShow;">Hide</button>
+                                <span style="font-size:1.5rem;" *ngIf="!isShow" class="k-icon k-font-icon k-i-arrow-chevron-right"></span>
+                            </span> -->
+                        </div>   
+                        <div style="margin-top: 10px;
+                        display: flex;
+                        flex-direction: row;
+                        width: 100%;
+                        justify-content: center;
+                        align-items: center;">
+                            <kendo-label class="form-label" [for]="PDF_Viewer" text="View PDF in Edge Viewer">
+                            </kendo-label>&nbsp;
+                            <kendo-switch style="font-size: 0.75rem;" #PDF_Viewer onLabel="Yes" offLabel="No"
+                            [(ngModel)]="this.pdfViewer" (valueChange)="setPDFViewer()"
+                                >
+                            </kendo-switch>
+                        </div>                     
+                    </kendo-card-header>
+                    <kendo-card-body class="pdf-content" style="font-size:0.85rem !important;">
+                        <div *ngIf="isBusy">
+                            Finding PDF files...
+                            <kendo-loader></kendo-loader>
+                        </div>
+                        <div *ngIf="pdfList">Found {{totalCount}} files.</div>
+                        <div class="pdf-content-detail" >
+                            @for(file of pdfList; track file.file) {
+                            <div [class.isActiveContent]="file['isActive']"
+                                style="border: 1px solid #ccc; cursor: pointer;" (click)="openPdf(file)">
+                                <span style="margin: 2px 0px 2px 5px;">{{file.file}}</span>
+                            </div>
+                            }
+                        </div>                        
+                    </kendo-card-body>
+                    <kendo-card-footer>
+                        <div class="pdf-content-pager" style="display: flex;">
+                            <kendo-datapager [style.width.%]="95" [pageSize]="pageSize" [skip]="skip" type="input" size="small"
+                                [total]="totalCount" (pageChange)="onPageChange($event)">
+                            </kendo-datapager>                             
+                        </div>
+                    </kendo-card-footer>
+                </kendo-card>
+                }
+                <span style="font-size:1.5rem;cursor: pointer;" title="Show Search Panel"  *ngIf="!expanded" class="k-icon k-font-icon k-i-arrow-chevron-right" (click)="expanded=!expanded;"></span>
+                <kendo-card class="pdf-viewer-card" [ngClass]="{'isShow-pdfViewer': !canSearch, 'pdf-viewer-card': canSearch}">
+                    <div *ngIf="pdfPath" style="width: 100%;height: 100%;" >
+                        <kendo-pdfviewer *ngIf="!pdfViewer" class="pdf-viewer"  [tools]="pdfViewerTools" [url]="pdfPath" 
+                        [saveFileName] ="saveFileName" [zoom]=".5" [minZoom]="0.25" style="width: 100%;height: 100%;"
+                        (load)="pdfLoad($event)"></kendo-pdfviewer>
+                        <object *ngIf="pdfViewer" id="mapItem" [data]="pdfPath | safe: 'resourceUrl'" type="application/pdf" 
+                        width="100%" height="100%">
+        
+                        </object> 
+                    </div> 
+                    <div class="pdf-viewer-disabled" *ngIf="!pdfPath">Search for map to view here.</div>
+                </kendo-card>
+            </div>
+        </div>
+    </kendo-card-body>
+    <!-- <div class="btn-container">
+            <button style="margin: 5px 23px 10px 0;" kendoButton size="small" fillMode="solid" themeColor="base"
+                (click)="closeDialog()">Close</button>
+        </div> -->
+</kendo-card>

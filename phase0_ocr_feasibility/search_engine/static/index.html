@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>eGIS Map Site — AI Search</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Segoe UI, Arial, sans-serif; margin: 0; background: #f4f6f8; color: #1a1a1a; }
+  header { background: linear-gradient(135deg, #1b3a5c, #2a5a8c); color: #fff; padding: 20px 24px; }
+  header h1 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+  header h1 .ai-badge { background: #4caf50; font-size: 11px; padding: 3px 8px; border-radius: 10px; }
+  header p { margin: 4px 0 0; font-size: 12px; opacity: .8; }
+
+  .search-section { background: #fff; border-bottom: 1px solid #ddd; padding: 20px 24px; }
+  .mode-toggle { display: flex; gap: 0; margin-bottom: 14px; }
+  .mode-toggle button {
+    padding: 8px 18px; font-size: 13px; border: 1px solid #1b3a5c; cursor: pointer;
+    background: #fff; color: #1b3a5c; transition: all 0.2s;
+  }
+  .mode-toggle button:first-child { border-radius: 4px 0 0 4px; }
+  .mode-toggle button:last-child { border-radius: 0 4px 4px 0; }
+  .mode-toggle button.active { background: #1b3a5c; color: #fff; }
+  .mode-toggle button:hover:not(.active) { background: #e8f0f8; }
+
+  .search-bar { display: flex; gap: 8px; }
+  .search-bar input { flex: 1; padding: 12px 16px; font-size: 15px; border: 1px solid #bbb; border-radius: 6px; }
+  .search-bar input:focus { outline: none; border-color: #1b3a5c; box-shadow: 0 0 0 2px rgba(27,58,92,0.15); }
+  .search-bar button { padding: 12px 24px; font-size: 15px; background: #1b3a5c; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+  .search-bar button:hover { background: #14293f; }
+  .hint { font-size: 12px; color: #777; margin-top: 8px; }
+  .hint.ai { color: #2e7d32; }
+
+  .ai-summary {
+    margin: 16px 24px 0; padding: 14px 18px; background: #e8f5e9; border-left: 4px solid #4caf50;
+    border-radius: 4px; font-size: 14px; line-height: 1.5;
+  }
+  .ai-summary .label { font-weight: 600; color: #2e7d32; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; }
+  .ai-intent { margin: 8px 24px 0; padding: 10px 14px; background: #f5f5f5; border-radius: 4px; font-size: 12px; color: #555; }
+  .ai-intent code { background: #e0e0e0; padding: 1px 5px; border-radius: 3px; }
+
+  .meta { padding: 8px 24px; font-size: 13px; color: #555; }
+  .results { padding: 0 24px 24px; display: grid; gap: 12px; }
+  .card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .card h3 { margin: 0 0 6px; font-size: 16px; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-right: 6px; }
+  .badge.id { background: #d3f0d3; color: #1a5c1a; }
+  .badge.fuzzy { background: #fde9c8; color: #8a5a00; }
+  .badge.quality-high { background: #e0e0ff; color: #2b2b8a; }
+  .badge.quality-ocr-high { background: #e0f0e0; color: #2b6a2b; }
+  .badge.quality-ocr-low { background: #fde0e0; color: #8a2b2b; }
+  .badge.meta { background: #eee; color: #555; }
+  .fields { font-size: 13px; color: #444; margin: 6px 0; }
+  .fields span { margin-right: 14px; }
+  a.open-pdf { font-size: 13px; }
+  .empty, .loading { padding: 24px; color: #777; }
+  .error { padding: 24px; color: #8a2b2b; }
+  .pages { display: grid; gap: 12px; margin-top: 10px; }
+  .page-row { display: grid; grid-template-columns: 260px 1fr; gap: 16px; border-top: 1px solid #eee; padding-top: 10px; }
+  .page-row img { width: 100%; border: 1px solid #ccc; border-radius: 4px; background: #eee; }
+  .ai-unavailable { background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 10px 14px; margin: 10px 24px; font-size: 13px; color: #856404; }
+</style>
+</head>
+<body>
+<header>
+  <h1>eGIS Map Site — AI Search <span class="ai-badge">Gemini</span></h1>
+  <p>Natural language search over Con Edison engineering map plates. Ask in plain English or use keywords.</p>
+</header>
+
+<div class="search-section">
+  <div class="mode-toggle">
+    <button id="mode-ai" class="active" title="Ask in natural language, AI interprets your intent">🤖 AI Search</button>
+    <button id="mode-kw" title="Direct keyword/plate-ID search (existing engine)">🔍 Keyword</button>
+  </div>
+  <div class="search-bar">
+    <input id="q" type="text" placeholder="Ask anything... e.g. &quot;Show me maps near Eastchester Road in the Bronx&quot;" />
+    <button id="go">Search</button>
+  </div>
+  <div id="hint" class="hint ai">💡 Try: "electrical plates near Sound View Avenue" or "structure sketch M-22158" or "gas regulator maps in Westchester"</div>
+</div>
+
+<div id="ai-unavailable" class="ai-unavailable" style="display:none">
+  ⚠️ AI search unavailable (GEMINI_API_KEY not set). Falling back to keyword search.
+</div>
+<div id="ai-summary" class="ai-summary" style="display:none"></div>
+<div id="ai-intent" class="ai-intent" style="display:none"></div>
+<div id="meta" class="meta"></div>
+<div id="results" class="results"></div>
+
+<script>
+const q = document.getElementById('q');
+const go = document.getElementById('go');
+const results = document.getElementById('results');
+const meta = document.getElementById('meta');
+const aiSummaryEl = document.getElementById('ai-summary');
+const aiIntentEl = document.getElementById('ai-intent');
+const aiUnavailEl = document.getElementById('ai-unavailable');
+const hintEl = document.getElementById('hint');
+const modeAi = document.getElementById('mode-ai');
+const modeKw = document.getElementById('mode-kw');
+
+let mode = 'ai';  // 'ai' or 'keyword'
+let aiAvailable = false;
+
+// Check AI status on load
+fetch('/api/ai-status').then(r => r.json()).then(data => {
+  aiAvailable = data.available;
+  if (!aiAvailable) {
+    aiUnavailEl.style.display = 'block';
+    // Auto-switch to keyword if AI not available
+    setMode('keyword');
+  }
+}).catch(() => {});
+
+function setMode(m) {
+  mode = m;
+  modeAi.classList.toggle('active', m === 'ai');
+  modeKw.classList.toggle('active', m === 'keyword');
+  if (m === 'ai') {
+    q.placeholder = 'Ask anything... e.g. "Show me maps near Eastchester Road in the Bronx"';
+    hintEl.className = 'hint ai';
+    hintEl.innerHTML = '💡 Try: "electrical plates near Sound View Avenue" or "structure sketch M-22158" or "gas regulator maps in Westchester"';
+  } else {
+    q.placeholder = 'Search for a street name, plate ID (e.g. 1W02), or equipment ID...';
+    hintEl.className = 'hint';
+    hintEl.innerHTML = '🔍 Direct keyword search — enter a plate ID, street name, or equipment ID.';
+  }
+}
+
+modeAi.addEventListener('click', () => setMode('ai'));
+modeKw.addEventListener('click', () => setMode('keyword'));
+
+async function doSearch() {
+  const term = q.value.trim();
+  if (!term) return;
+  results.innerHTML = '<div class="loading">Searching…</div>';
+  meta.textContent = '';
+  aiSummaryEl.style.display = 'none';
+  aiIntentEl.style.display = 'none';
+
+  const useAi = mode === 'ai' && aiAvailable;
+  const endpoint = useAi ? '/api/ai-search' : '/api/search';
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), useAi ? 30000 : 10000);
+  try {
+    const res = await fetch(endpoint + '?q=' + encodeURIComponent(term), { signal: controller.signal });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Server returned ${res.status}: ${text.slice(0, 200)}`);
+    }
+    const data = await res.json();
+    if (useAi) {
+      renderAi(data);
+    } else {
+      render(data);
+    }
+  } catch (err) {
+    console.error('Search failed:', err);
+    const msg = err.name === 'AbortError'
+      ? 'Request timed out — is the server still running?'
+      : `Search failed: ${err.message}`;
+    results.innerHTML = `<div class="error">${msg}</div>`;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function renderAi(data) {
+  // Show AI summary
+  if (data.summary) {
+    aiSummaryEl.innerHTML = `<div class="label">🤖 AI Summary</div>${data.summary}`;
+    aiSummaryEl.style.display = 'block';
+  }
+  // Show parsed intent
+  if (data.intent) {
+    const terms = data.intent.search_terms ? data.intent.search_terms.join(', ') : '';
+    const filters = data.intent.filters || {};
+    const filterParts = [];
+    if (filters.region) filterParts.push(`region: ${filters.region}`);
+    if (filters.utility) filterParts.push(`utility: ${filters.utility}`);
+    if (filters.facility_type) filterParts.push(`facility: ${filters.facility_type}`);
+    aiIntentEl.innerHTML = `<b>Understood as:</b> ${data.intent.intent_summary || ''}<br/>` +
+      `<b>Search terms:</b> <code>${terms}</code>` +
+      (filterParts.length ? ` &nbsp;|&nbsp; <b>Filters:</b> ${filterParts.join(', ')}` : '');
+    aiIntentEl.style.display = 'block';
+  }
+  // Render results using the same card layout
+  const hits = data.results || [];
+  meta.textContent = `${hits.length} plate(s) found` + (data.totalFound > hits.length ? ` (showing ${hits.length} of ${data.totalFound})` : '');
+  renderCards(hits);
+}
+
+function render(data) {
+  const hits = data.results || [];
+  const totalPages = hits.reduce((n, h) => n + h.pages.length, 0);
+  meta.textContent = `${hits.length} plate(s) found for "${data.query}" (${totalPages} matching page(s))` +
+    (data.fuzzy ? '  (fuzzy match — no exact hit)' : '');
+  renderCards(hits);
+}
+
+function renderCards(hits) {
+  if (!hits.length) {
+    results.innerHTML = '<div class="empty">No matching plates found.</div>';
+    return;
+  }
+  results.innerHTML = hits.map(h => {
+    const pageRows = h.pages.map(p => {
+      const cropUrl = p.bbox
+        ? `/api/crop?plate=${encodeURIComponent(h.plateId)}&page=${p.page}` +
+          `&x0=${p.bbox[0]}&y0=${p.bbox[1]}&x1=${p.bbox[2]}&y1=${p.bbox[3]}`
+        : `/api/crop?plate=${encodeURIComponent(h.plateId)}&page=${p.page}`;
+      const badges = [
+        p.idMatch ? '<span class="badge id">ID match</span>' : '',
+        p.fuzzyDistance != null ? `<span class="badge fuzzy">fuzzy (edit dist ${p.fuzzyDistance})</span>` : '',
+        `<span class="badge quality-${p.extractionQuality}">${p.extractionQuality}</span>`,
+      ].join('');
+      return `
+        <div class="page-row">
+          <img src="${cropUrl}" alt="crop" loading="lazy" />
+          <div>
+            <div><b>Page ${p.page}</b> — score ${p.score ?? '—'}</div>
+            ${badges}
+            <div class="fields"><span><b>Matched word:</b> ${p.matchedWord ?? '(no exact word position found)'}</span></div>
+          </div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="card">
+        <h3>${h.plateId} <span style="font-weight:normal;color:#777">(${h.pages.length} page${h.pages.length > 1 ? 's' : ''} matched)</span></h3>
+        <div class="fields">
+          <span><b>Region:</b> ${h.region}${h.regionCode ? ' (' + h.regionCode + ')' : ''}</span>
+          <span><b>Utility:</b> ${h.utility}</span>
+          <span><b>Facility:</b> ${h.facilityType}</span>
+          <span class="badge meta">metadata: ${h.metadataSource}, confidence ${h.metadataConfidence}</span>
+        </div>
+        <div class="pages">${pageRows}</div>
+        <a class="open-pdf" href="/api/pdf?plate=${encodeURIComponent(h.plateId)}" target="_blank">Open source PDF ↗</a>
+      </div>`;
+  }).join('');
+}
+
+go.addEventListener('click', doSearch);
+q.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+// Focus the input on load
+q.focus();
+</script>
+</body>
+</html>

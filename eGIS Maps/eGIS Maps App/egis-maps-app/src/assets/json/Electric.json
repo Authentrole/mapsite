@@ -1,0 +1,360 @@
+[
+    {
+        "disclaimer": "For map discrepancies, please contact your <a href='https://ceorg/sites/electricops/SiteDirectory/MappingCommittee/default.aspx' target='_blank' style='color: #1a73e8; text-decoration: none;'><strong>Regional Engineering mapping group</strong></a>. For enhancement requests, submit ideas to the Mapping Committee. Approved items will be coordinated with eGIS for implementation."
+    },
+    {
+        "name" : "Bronx & Westchester",
+        "items": [
+            {
+                "name" : "Bronx M&S Plate",
+                "url" : "pages/map-display.html?CSO=X&FACILITY=PDF_E_M_and_S&PDFTYPE=BOTH"
+            },
+            {
+                "name" : "Westchester M&S Plate",
+                "url" : "pages/map-display.html?CSO=W&FACILITY=PDF_E_M_and_S&PDFTYPE=BOTH"
+            },
+            {
+                "name" : "Bronx Feeder Map",
+                "url" : "pages/map-display.html?CSO=X&FACILITY=PDF_FEEDER&PDFTYPE=BOTH",
+                "page_template":true
+            },      
+            {
+                "name" : "Bronx Network Map",
+                "url" : "pages/map-display.html?CSO=X&FACILITY=PDF_PrimaryNetwork&PDFTYPE=BOTH"
+            },   
+            {
+                "name" : "Westchester Feeder Map",
+                "url" : "pages/map-display.html?CSO=W&FACILITY=PDF_FEEDER&PDFTYPE=BOTH",
+                "page_template":true
+            },      
+            {
+                "name" : "Westchester Network Map",
+                "url" : "pages/map-display.html?CSO=W&FACILITY=PDF_PrimaryNetwork&PDFTYPE=BOTH"
+            },              
+            {
+                "name" : "Bronx Manhole Detail",
+                "url" : "pages/map-display.html?CSO=X&FACILITY=PDF_MHdetail"
+            },
+            {
+                "name" : "Westchester Manhole Detail",
+                "url" : "pages/map-display.html?CSO=W&FACILITY=PDF_MHdetail"
+            },            
+            {
+                "name" : "Bronx Conduit Plate",
+                "url" : "pages/map-display.html?CSO=X&FACILITY=PDF_Conduit"
+            },
+            {
+                "name" : "Bronx Conduit Names",
+                "url" : "PDF/Bronx/BC_pi_names.pdf"
+            },
+            {
+                "name" : "Westchester C&DO Plate",
+                "url" : "pages/map-display.html?CSO=W&FACILITY=PDF_C_and_DO"
+            },
+            {
+                "name" : "Westchester C&DO Names",
+                "url" : "PDF/Westchester/WEST_CDO_INDEX.pdf"
+            },
+            {
+                "name" : "Bronx Composite Feeder Plate",
+                "url" : "pages/map-display.html?CSO=X&FACILITY=PDF_Composite"
+            },
+            {
+                "name" : "Bronx Composite Feeder Scale",
+                "url" : "PDF/Bronx/BCF_pi_scale.pdf"
+            },
+            {
+                "name" : "Bronx Composite Feeder Names",
+                "url" : "PDF/Bronx/BCF_pi_names.pdf"
+            },
+            {
+                "name" : "Regional Engineering Layout",
+                "url" : "pages/map-display.html?CSO=W&FACILITY=PDF_DistEng>E_Layout",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=01a356af-4a78-4a48-8b58-2ab4405d3c43&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Regional Engineering B&A",
+                "url" : "pages/map-display.html?CSO=W&FACILITY=PDF_DistEng>BnA",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=a44e1770-3854-44ba-98c2-2f82a1eaf234&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Customer Engineering Layout",
+                "url" : "pages/map-display.html?CSO=W&FACILITY=PDF_EnrgySrvcs>E_Layout",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=398d935f-f62e-469e-b9d0-9c7d6165a2e7&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Customer Engineering B&A",
+                "url" : "pages/map-display.html?CSO=W&FACILITY=PDF_EnrgySrvcs>BnA",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=1053feda-9dd4-4b24-bfa7-8fffed0eeecd&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Emergency Layout",
+                "url" : "pages/map-display.html?CSO=W&FACILITY=PDF_Emergency",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=d2c35cfa-5dac-4ab9-8b94-7c7bc783c98f&S_LONGNAME=%2A"
+            }
+        ]
+    },
+    {
+        "name" : "Manhattan",
+        "items": [            
+            {
+                "name" : "M&S Plate",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_E_M_and_S&PDFTYPE=BOTH"
+            },            
+            {
+                "name" : "Feeder Map",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_FEEDER&PDFTYPE=BOTH",
+                "page_template":true
+            },
+            {
+                "name" : "Vertical Detail Plate",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_VerticalDetails"
+            },
+            {
+                "name" : "Conduit Plate",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_Conduit"
+            },
+            {
+                "name" : "Network Map",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_PrimaryNetwork&PDFTYPE=BOTH"
+            }, 
+            {
+                "name" : "Manhole Detail",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_MHdetail"
+            },            
+            {
+                "name" : "Composite Feeder Plate",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_Composite"
+            },
+            {
+                "name" : "Regional Engineering Layout",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_DistEng>E_Layout",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=59dc5877-4f4a-43dd-a414-dbbd0be4af6e&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Regional Engineering B&A",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_DistEng>BnA",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=5a1e3a8c-204c-4eea-8e86-71144ebe26a4&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Customer Engineering Layout",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_EnrgySrvcs>E_Layout",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=1f50231d-8867-4c32-8a61-c610380792fe&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Customer Engineering B&A",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_EnrgySrvcs>BnA",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=364a0033-f585-4f4d-bf67-8dddf80f3467&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Emergency Layout",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_Emergency",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=baaa5a7c-3f81-4d78-9540-4a8ccee2d8ca&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Telecom",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_Telecom"
+            },
+            {
+                "name" : "Numerical Feeder",
+                "url" : "pages/map-display.html?CSO=M&FACILITY=PDF_NumericalFeeder&PDFTYPE=MONO"
+            }
+        
+        ]
+    },
+    {
+        "name" : "Brooklyn & Queens",
+        "items": [            
+            {
+                "name" : "Brooklyn M&S Plate",
+                "url" : "pages/map-display.html?CSO=B&FACILITY=PDF_E_M_and_S&PDFTYPE=BOTH"
+            },
+            {
+                "name" : "Queens M&S Plate",
+                "url" : "pages/map-display.html?CSO=Q&FACILITY=PDF_E_M_and_S&PDFTYPE=BOTH"
+            },
+            {
+                "name" : "Brooklyn Feeder Map",
+                "url" : "pages/map-display.html?CSO=B&FACILITY=PDF_FEEDER&PDFTYPE=BOTH",
+                "page_template":true
+            },
+            {
+                "name" : "Brooklyn Network Map",
+                "url" : "pages/map-display.html?CSO=B&FACILITY=PDF_PrimaryNetwork&PDFTYPE=BOTH"
+            },
+            {
+                "name" : "Queens Feeder Map",
+                "url" : "pages/map-display.html?CSO=Q&FACILITY=PDF_FEEDER&PDFTYPE=BOTH",
+                "page_template":true
+            },
+            {
+                "name" : "Queens Network Map",
+                "url" : "pages/map-display.html?CSO=Q&FACILITY=PDF_PrimaryNetwork&PDFTYPE=BOTH"
+            },            
+            {
+                "name" : "Queens Manhole Detail",
+                "url" : "pages/map-display.html?CSO=Q&FACILITY=PDF_MHdetail"
+            },
+            {
+                "name" : "Brooklyn Manhole Detail",
+                "url" : "pages/map-display.html?CSO=B&FACILITY=PDF_MHdetail"
+            },            
+            {
+                "name" : "Queens C&DO Plate",
+                "url" : "pages/map-display.html?CSO=Q&FACILITY=PDF_C_and_DO"
+            },
+            {
+                "name" : "Brooklyn C&DO Plate",
+                "url" : "pages/map-display.html?CSO=B&FACILITY=PDF_C_and_DO"
+            },
+            {
+                "name" : "Regional Engineering Layout",
+                "url" : "pages/map-display.html?CSO=B&FACILITY=PDF_DistEng>E_Layout",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=3fcbf891-0e96-4cd6-a675-d8e00b37b6e3&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Regional Engineering B&A",
+                "url" : "pages/map-display.html?CSO=B&FACILITY=PDF_DistEng>BnA",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=ff6fa0ef-f11c-48a8-a71a-10bd87ec3187&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Customer Engineering Layout",
+                "url" : "pages/map-display.html?CSO=B&FACILITY=PDF_EnrgySrvcs>E_Layout",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=1ff35094-beca-4316-a991-362ab33231d8&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Customer Engineering B&A",
+                "url" : "pages/map-display.html?CSO=B&FACILITY=PDF_EnrgySrvcs>BnA",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=2915ae40-14c1-4b67-8fcd-2003d1a99a17&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Emergency Layout",
+                "url" : "pages/map-display.html?CSO=B&FACILITY=PDF_Emergency",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=01bf54ee-838b-4776-abb7-3fcf4b7bc3b2&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Telecom",
+                "url" : "pages/map-display.html?CSO=B&FACILITY=PDF_Telecom"
+            }
+        
+        ]
+    },
+    {
+        "name" : "Staten Island",
+        "items": [                
+            {
+                "name" : "M&S Plate",
+                "url" : "pages/map-display.html?CSO=R&FACILITY=PDF_E_M_and_S&PDFTYPE=BOTH"
+            },
+            {
+                "name" : "Feeder Map",
+                "url" : "pages/map-display.html?CSO=R&FACILITY=PDF_FEEDER&PDFTYPE=BOTH",
+                "page_template":true
+            },
+            {
+                "name" : "C&DO Plate",
+                "url" : "pages/map-display.html?CSO=R&FACILITY=PDF_C_and_DO&PDFTYPE=BOTH"
+            },
+			{
+                "name" : "Manhole Detail",
+                "url" : "pages/map-display.html?CSO=R&FACILITY=PDF_MHdetail"
+            },
+            {
+                "name" : "Regional Engineering Layout",
+                "url" : "pages/map-display.html?CSO=R&FACILITY=PDF_DistEng>E_Layout",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=9299665b-1ca3-4f33-bd1c-ad7f51462a6d&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Regional Engineering B&A",
+                "url" : "pages/map-display.html?CSO=R&FACILITY=PDF_DistEng>BnA",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=c541c482-9580-4e64-9254-62bcba1b0c67&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Customer Engineering Layout",
+                "url" : "pages/map-display.html?CSO=R&FACILITY=PDF_EnrgySrvcs>E_Layout",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=d9a4d4a7-42a7-4eb8-8b71-ed5a53effb91&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Customer Engineering B&A",
+                "url" : "pages/map-display.html?CSO=R&FACILITY=PDF_EnrgySrvcs>BnA",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=5aea0f5d-bae9-4f7d-8bbe-8366ae90cf70&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "PI Engineering Layout",
+                "url" : "pages/map-display.html?CSO=R&FACILITY=PDF_EnrgySrvcs>E_Layout",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=5d7bde04-8224-4e99-987d-efba96533a0e&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "PI Engineering B&A",
+                "url" : "pages/map-display.html?CSO=R&FACILITY=PDF_EnrgySrvcs>BnA",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=d4cbda19-aca0-4348-b454-9a9537fcd084&S_LONGNAME=%2A"
+            },
+            {
+                "name" : "Emergency Layout",
+                "url" : "pages/map-display.html?CSO=R&FACILITY=PDF_Emergency",
+                "alt_url":"https://adept.conedison.net/synergis.webapp/#/urlapi?type=search&mode=2&S_LIBID=642a375a-c7bc-4d40-a01c-a3bc9fe65305&S_LONGNAME=%2A"
+            }        
+        ]
+    },
+    {
+        "name" : "General",
+        "items": [            
+            {
+                "name" : "1000 Series",
+                "url" : "https://ceorg/sites/electricops/SiteDirectory/MappingCommittee/Shared%20Documents/System%20Symbols/1000%20Series%20HTOD"
+            },            
+            {
+                "name" : "Adept Layout",
+                "url" : "https://adept.conedison.net/synergis.webapp/#/login"
+            },
+			{
+                "name" : "Feeder Mapping Info",
+                "url" : "http://wtwebapp/"
+            },
+            {
+				"name" : "Meter Analysis and Response Application",
+				"url" : "https://egisportal.conedison.net/portal/apps/experiencebuilder/experience/?id=6acbfae059b64f3ea85239be783ff09c",
+                "isNew":true
+			},
+			{
+				"name" : "Layout Number Generator",
+				"url" : "./#/lng",
+                "ad_group":"dl - eGIS Viewer - IT Ops",
+                "isNew":true
+			},
+			{
+				"name":"ArcFM Web Links"
+			},
+            {
+                "name" : "Electric M&S",
+                "url" : "https://gstarcfmweb.conedison.net/AFMWeb413/index.html?viewer=Electric.ArcFMWeb",
+                "isNew":true
+            },
+            {
+                "name" : "Secondary CDMS",
+                "url" : "https://gstarcfmweb.conedison.net/AFMWeb413/index.html?viewer=Electric_CDMS.ArcFMWeb",
+                "isNew":true
+            },
+			{
+				"name" : "Primary Feeder",
+				"url" : "https://gstarcfmweb.conedison.net/AFMWeb413/index.html?viewer=Primary.ArcFMWeb",
+                "isNew":true
+			},            
+			{
+				"name" : "NetDVD",
+				"url" : "https://gstarcfmweb.conedison.net/AFMWeb413/index.html?viewer=NetDVD.ArcFMWeb",
+                "isNew":true
+			},			
+			{
+				"name" : "Staten Island Secondary - Test",
+				"url" : "https://gstarcfmweb.conedison.net/AFMWeb413/index.html?viewer=Electric.ArcFMWeb#",
+                "isNew":true
+			},
+			{
+				"name" : "Staten Island C&DO - Test",
+				"url" : "https://gstarcfmweb.conedison.net/AFMWeb413/index.html?viewer=CDO.ArcFMWeb",
+                "isNew":true
+			}
+        ]
+    }
+]
