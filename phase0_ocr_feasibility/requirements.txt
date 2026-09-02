@@ -3,7 +3,9 @@ PyMuPDF>=1.23.0        # PDF -> image rendering (pip-only, no system dep)
 Pillow>=10.0.0        # image IO / drawing
 numpy>=1.24.0
 opencv-python-headless>=4.8.0   # preprocessing (deskew, contrast, invert)
-chromadb>=0.5.0        # local vector store for search_engine (embeddings + metadata, no server needed)
+chromadb>=0.5.0        # local vector store for search_engine (metadata + vectors, no server needed)
+openai>=1.50.0          # Azure OpenAI client for search_engine (chat + embeddings)
+python-dotenv>=1.0.0    # loads search_engine/.env (Azure OpenAI key/endpoint/deployments)
 
 # OCR engines (install at least one)
 
@@ -14,7 +16,8 @@ chromadb>=0.5.0        # local vector store for search_engine (embeddings + meta
 # Good on rotated/angled map labels (same models as PaddleOCR).
 #   NOTE: the 1.4.x wheels declare Requires-Python <3.13 but run fine on 3.13;
 #   on 3.13 install with:  pip install --ignore-requires-python rapidocr-onnxruntime
-rapidocr-onnxruntime>=1.4.0    # pulls onnxruntime, shapely, pyclipper, pyyaml
+#rapidocr-onnxruntime>=1.4.0    # pulls onnxruntime, shapely, pyclipper, pyyaml
+rapidocr-onnxruntime
 
 # Option B: Tesseract wrapper. ALSO needs the system 'tesseract' binary
 # (apt-get / brew / winget). Skipped automatically if the binary is absent.

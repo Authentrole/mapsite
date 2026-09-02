@@ -2,13 +2,14 @@
 """Local, dependency-free-ish HTTP server for the Tier-3 AI search engine.
 
 Python stdlib only for the HTTP layer (no Flask/FastAPI); ChromaDB is the
-one real dependency, used as a local, embedded vector store -- no external
-service to reach. Serves:
+local, embedded vector store. Embeddings and the natural-language layer
+(intent extraction, summaries) call out to Azure OpenAI -- see
+azure_openai.py. Serves:
 
   GET /                                        -> the standalone search harness
   GET /api/search?q=...                        -> JSON ranked list of matching plates (semantic)
-  GET /api/ai-search?q=...                     -> Gemini intent + semantic retrieval + summary
-  GET /api/ai-status                           -> is GEMINI_API_KEY configured
+  GET /api/ai-search?q=...                     -> Azure OpenAI intent + semantic retrieval + summary
+  GET /api/ai-status                           -> is Azure OpenAI configured
   GET /api/embedding-status                    -> size of the vector index
   GET /api/crop?plate=&page=&x0=&y0=&x1=&y1=    -> PNG crop, highlighted if a bbox is given
   GET /api/pdf?plate=                           -> raw PDF bytes (open the source plate)
@@ -32,6 +33,7 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import ai_search as ai_search_mod  # noqa: E402
+import azure_openai  # noqa: E402
 import ingest as ingest_mod  # noqa: E402
 import vectordb  # noqa: E402
 
@@ -221,7 +223,7 @@ def search(term: str, limit: int = 25) -> dict:
     for meta in literal_matches(term):
         add_candidate(meta, 1.0, True)
 
-    res = collection.query(query_texts=[term], n_results=min(limit * 3, n))
+    res = collection.query(query_embeddings=[azure_openai.embed_text(term)], n_results=min(limit * 3, n))
     for meta, dist in zip(res["metadatas"][0], res["distances"][0]):
         similarity = 1.0 - dist  # cosine space: distance = 1 - cosine_similarity
         if similarity < SEMANTIC_SIMILARITY_FLOOR and meta["plate_id"] not in by_plate:
@@ -246,9 +248,10 @@ def search(term: str, limit: int = 25) -> dict:
 
 
 def ai_search(user_query: str, limit: int = 25) -> dict:
-    """AI-powered search: Gemini extracts intent; retrieval is semantic
-    (ChromaDB nearest-neighbor over local embeddings) for every search term,
-    merged and then filtered by the extracted metadata constraints."""
+    """AI-powered search: Azure OpenAI extracts intent; retrieval is
+    semantic (ChromaDB nearest-neighbor over Azure OpenAI embeddings) for
+    every search term, merged and then filtered by the extracted metadata
+    constraints."""
     intent = ai_search_mod.extract_intent(user_query)
 
     if not intent.get("in_scope", True):
@@ -383,13 +386,13 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path == "/api/ai-status":
                 return self._send_json({
                     "available": ai_search_mod.is_available(),
-                    "model": ai_search_mod.GEMINI_MODEL,
+                    "model": azure_openai.AZURE_OPENAI_CHAT_DEPLOYMENT,
                 })
 
             if parsed.path == "/api/embedding-status":
                 return self._send_json({
-                    "available": True,
-                    "model": "chromadb-default (all-MiniLM-L6-v2, local)",
+                    "available": azure_openai.is_available(),
+                    "model": azure_openai.AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
                     "indexedPages": vectordb.count(),
                 })
 
@@ -398,7 +401,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not term:
                     return self._send_json({"results": [], "error": "missing q"}, 400)
                 if not ai_search_mod.is_available():
-                    return self._send_json({"error": "GEMINI_API_KEY not configured"}, 503)
+                    return self._send_json({"error": "Azure OpenAI not configured"}, 503)
                 return self._send_json(ai_search(term))
 
             if parsed.path == "/api/search":

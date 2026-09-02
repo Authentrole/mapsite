@@ -6,8 +6,9 @@ Born-digital pages: PyMuPDF word-level extraction (instant, exact). Scanned
 pages: tiled RapidOCR -- single-shot OCR on these ~34-megapixel plates
 misses most labels (recall collapses on dense pages, see ../RESULTS.md);
 tiling with overlap recovers it. The extracted/OCR'd text of each page is
-embedded and stored in Chroma (see vectordb.py) alongside heuristic plate
-metadata -- no SQLite, no per-word bounding boxes.
+embedded via Azure OpenAI (see azure_openai.py) and stored in Chroma (see
+vectordb.py) alongside heuristic plate metadata -- no SQLite, no per-word
+bounding boxes.
 
 Usage:
     python ingest.py --input "C:\\path\\to\\PDFs" --reset
@@ -27,6 +28,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import ocr_engines  # noqa: E402
 
+import azure_openai  # noqa: E402
 import metadata  # noqa: E402
 import vectordb  # noqa: E402
 
@@ -186,7 +188,8 @@ def ingest_file(path: str, collection) -> int:
         doc.close()
 
     if ids:
-        collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+        embeddings = azure_openai.embed_texts(documents)
+        collection.upsert(ids=ids, documents=documents, metadatas=metadatas, embeddings=embeddings)
         vectordb.invalidate_caches()
     return len(ids)
 
@@ -196,6 +199,10 @@ def main(argv=None) -> int:
     ap.add_argument("--input", required=True, help="folder of PDFs to ingest")
     ap.add_argument("--reset", action="store_true", help="wipe the vector index first")
     args = ap.parse_args(argv)
+
+    if not azure_openai.is_available():
+        print("AZURE_OPENAI_API_KEY / AZURE_OPENAI_ENDPOINT are not configured (see search_engine/.env) -- cannot embed pages.")
+        return 1
 
     collection = vectordb.get_collection(reset=args.reset)
     t0 = time.time()

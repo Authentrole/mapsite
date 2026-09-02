@@ -1,28 +1,22 @@
-"""AI-powered natural language search layer using Google Gemini.
+"""AI-powered natural language search layer using Azure OpenAI.
 
-Sits between the user's natural language query and the existing keyword
-search engine. Gemini interprets the intent, extracts structured search
-parameters, and the existing FTS/fuzzy search does the retrieval. After
-retrieval, Gemini summarizes the results in plain English.
+Sits between the user's natural language query and the existing search
+engine. The chat deployment interprets the intent, extracts structured
+search parameters, and vectordb/server does the retrieval. After
+retrieval, the same chat deployment summarizes the results in plain
+English.
 
-Environment:
-    GEMINI_API_KEY  — your Google AI Studio API key (required)
+Configuration lives in azure_openai.py / search_engine/.env
+(AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_CHAT_DEPLOYMENT).
 """
 from __future__ import annotations
 
 import json
-import os
 import re
-import urllib.request
-import urllib.error
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "use your gemini key")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
-GEMINI_URL = (
-    f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
-)
+import azure_openai
 
-# System prompt that teaches Gemini about our domain
+# System prompt that teaches the model about our domain
 INTENT_SYSTEM_PROMPT = """\
 You are an AI assistant for the Con Edison eGIS Map Site search system.
 The system indexes engineering map plates (PDFs) containing electrical distribution
@@ -69,49 +63,9 @@ what the user might try instead.
 """
 
 
-def _call_gemini(system_prompt: str, user_message: str) -> str:
-    """Call Gemini API and return the text response."""
-    if not GEMINI_API_KEY:
-        raise RuntimeError("GEMINI_API_KEY environment variable is not set")
-
-    payload = {
-        "contents": [
-            {"role": "user", "parts": [{"text": user_message}]}
-        ],
-        "systemInstruction": {
-            "parts": [{"text": system_prompt}]
-        },
-        "generationConfig": {
-            "temperature": 0.1,
-            "maxOutputTokens": 512,
-        },
-    }
-
-    url = f"{GEMINI_URL}?key={GEMINI_API_KEY}"
-    data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        url, data=data,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            body = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        err_body = e.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Gemini API error {e.code}: {err_body[:300]}")
-
-    # Extract text from response
-    candidates = body.get("candidates", [])
-    if not candidates:
-        raise RuntimeError("Gemini returned no candidates")
-    parts = candidates[0].get("content", {}).get("parts", [])
-    return "".join(p.get("text", "") for p in parts).strip()
-
-
 def extract_intent(user_query: str) -> dict:
-    """Use Gemini to parse natural language into structured search params.
+    """Use the Azure OpenAI chat deployment to parse natural language into
+    structured search params.
 
     Returns:
         {
@@ -120,9 +74,9 @@ def extract_intent(user_query: str) -> dict:
             "intent_summary": "..."
         }
     """
-    raw = _call_gemini(INTENT_SYSTEM_PROMPT, user_query)
+    raw = azure_openai.chat(INTENT_SYSTEM_PROMPT, user_query)
 
-    # Strip markdown code fences if Gemini wraps the JSON
+    # Strip markdown code fences if the model wraps the JSON
     raw = re.sub(r"^```(?:json)?\s*", "", raw)
     raw = re.sub(r"\s*```$", "", raw)
 
@@ -151,11 +105,12 @@ def extract_intent(user_query: str) -> dict:
 
 
 def summarize_results(user_query: str, results: list[dict]) -> str:
-    """Use Gemini to produce a human-friendly summary of search results."""
+    """Use the Azure OpenAI chat deployment to produce a human-friendly
+    summary of search results."""
     if not results:
         context = f'User searched for: "{user_query}"\nNo results were found.'
     else:
-        # Build a compact representation for Gemini
+        # Build a compact representation for the model
         plates_info = []
         for r in results[:10]:  # limit to avoid token explosion
             pages_str = ", ".join(
@@ -173,9 +128,9 @@ def summarize_results(user_query: str, results: list[dict]) -> str:
             f"Found {len(results)} plate(s):\n" + "\n".join(plates_info)
         )
 
-    return _call_gemini(SUMMARY_SYSTEM_PROMPT, context)
+    return azure_openai.chat(SUMMARY_SYSTEM_PROMPT, context)
 
 
 def is_available() -> bool:
-    """Check if the AI layer is configured (a real API key, not the placeholder default)."""
-    return bool(GEMINI_API_KEY) and GEMINI_API_KEY != "use your gemini key"
+    """Check if the AI layer is configured (Azure OpenAI key + endpoint present)."""
+    return azure_openai.is_available()

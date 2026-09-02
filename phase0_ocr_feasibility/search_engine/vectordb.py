@@ -2,12 +2,12 @@
 
 Replaces the old SQLite index (plates / content_fts / word_positions /
 embeddings tables). Each ingested plate page becomes one document in a
-persistent Chroma collection: its extracted/OCR'd text is embedded locally
-via Chroma's bundled sentence-transformers model (all-MiniLM-L6-v2, runs
-on-device -- no API key, no network calls at query time; the model itself
-is downloaded once from Hugging Face the first time it's used and cached
-under the OS user cache dir) and stored alongside plate metadata (region,
-utility, facility type, source PDF path, ...).
+persistent Chroma collection: its extracted/OCR'd text is embedded via
+Azure OpenAI (see azure_openai.py) and stored here alongside plate
+metadata (region, utility, facility type, source PDF path, ...). Chroma
+itself never computes an embedding -- ingest.py and server.py always pass
+explicit vectors (embeddings= / query_embeddings=), so this module is
+pure storage/retrieval, not an embedding provider.
 
 There is no separate keyword/FTS index and no per-word bounding boxes:
 search is nearest-neighbor cosine similarity over the page embeddings, and
