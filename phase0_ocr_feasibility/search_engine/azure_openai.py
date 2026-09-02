@@ -18,7 +18,7 @@ from __future__ import annotations
 import os
 
 from dotenv import load_dotenv
-from openai import AzureOpenAI
+from openai import AzureOpenAI, BadRequestError
 
 load_dotenv()
 
@@ -64,13 +64,29 @@ def chat(system_prompt: str, user_message: str, temperature: float = 0.1, max_to
     return (resp.choices[0].message.content or "").strip()
 
 
+def _embed_with_shrink(chunk: list[str], max_attempts: int = 6) -> list[list[float]]:
+    """Call the embedding deployment, shrinking every text in `chunk` and
+    retrying if Azure rejects it for exceeding its per-input token limit
+    (8192 tokens for text-embedding-3-*). A character count is a poor
+    proxy for token count on this corpus -- dense, label-heavy plate text
+    (many short alphanumeric IDs like "M22158", "10-AB") tokenizes far
+    less efficiently than prose, so a single static character cap either
+    wastes budget on plain text or still overflows on label-heavy text.
+    Shrinking on the actual rejection is correct regardless of content."""
+    for attempt in range(max_attempts):
+        try:
+            resp = get_client().embeddings.create(model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT, input=chunk)
+            return [d.embedding for d in resp.data]
+        except BadRequestError as e:
+            if "maximum input length" not in str(e) or attempt == max_attempts - 1:
+                raise
+            chunk = [(t[:int(len(t) * 0.6)] or " ") for t in chunk]
+    raise RuntimeError("unreachable")  # loop always returns or raises
+
+
 def embed_text(text: str) -> list[float]:
     """Embed a single piece of text (typically a search query)."""
-    resp = get_client().embeddings.create(
-        model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
-        input=text[:MAX_CHARS] or " ",
-    )
-    return resp.data[0].embedding
+    return _embed_with_shrink([text[:MAX_CHARS] or " "])[0]
 
 
 def embed_texts(texts: list[str], chunk_size: int = 16) -> list[list[float]]:
@@ -78,6 +94,5 @@ def embed_texts(texts: list[str], chunk_size: int = 16) -> list[list[float]]:
     vectors: list[list[float]] = []
     for i in range(0, len(texts), chunk_size):
         chunk = [t[:MAX_CHARS] or " " for t in texts[i:i + chunk_size]]
-        resp = get_client().embeddings.create(model=AZURE_OPENAI_EMBEDDING_DEPLOYMENT, input=chunk)
-        vectors.extend(d.embedding for d in resp.data)
+        vectors.extend(_embed_with_shrink(chunk))
     return vectors
