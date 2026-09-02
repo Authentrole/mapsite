@@ -1,0 +1,6 @@
+# phase0_ocr_feasibility (Python)
+phase0_ocr_feasibility/.venv/
+phase0_ocr_feasibility/**/__pycache__/
+phase0_ocr_feasibility/**/*.pyc
+phase0_ocr_feasibility/search_engine/.env
+phase0_ocr_feasibility/search_engine/chroma_db/

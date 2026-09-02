@@ -16,8 +16,7 @@ import re
 import urllib.request
 import urllib.error
 
-# GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_API_KEY = "AQ.Ab8RN6I1haGPUjQV4LHnO0u7ZE8h-IVFJn4zxHy2tX9SK5aQ_Q"
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "use your gemini key")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
 GEMINI_URL = (
     f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
@@ -178,5 +177,5 @@ def summarize_results(user_query: str, results: list[dict]) -> str:
 
 
 def is_available() -> bool:
-    """Check if the AI layer is configured (API key present)."""
-    return bool(GEMINI_API_KEY)
+    """Check if the AI layer is configured (a real API key, not the placeholder default)."""
+    return bool(GEMINI_API_KEY) and GEMINI_API_KEY != "use your gemini key"

@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Ingest map-plate PDFs into the local search index (Tier 3, ingestion half).
+"""Ingest map-plate PDFs into the local ChromaDB vector index (Tier 3,
+ingestion half).
 
-Born-digital pages: PyMuPDF word-level extraction (instant, exact, includes
-bbox for free). Scanned pages: tiled RapidOCR -- single-shot OCR on these
-~34-megapixel plates misses most labels (recall collapses on dense pages,
-see ../RESULTS.md); tiling with overlap recovers it.
+Born-digital pages: PyMuPDF word-level extraction (instant, exact). Scanned
+pages: tiled RapidOCR -- single-shot OCR on these ~34-megapixel plates
+misses most labels (recall collapses on dense pages, see ../RESULTS.md);
+tiling with overlap recovers it. The extracted/OCR'd text of each page is
+embedded and stored in Chroma (see vectordb.py) alongside heuristic plate
+metadata -- no SQLite, no per-word bounding boxes.
 
 Usage:
-    python ingest.py --input "C:\\Users\\2444743\\Downloads\\16503-2" --reset
+    python ingest.py --input "C:\\path\\to\\PDFs" --reset
 """
 from __future__ import annotations
 
@@ -24,8 +27,8 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import ocr_engines  # noqa: E402
 
-import db  # noqa: E402
 import metadata  # noqa: E402
+import vectordb  # noqa: E402
 
 TEXT_LAYER_MIN_CHARS = 200   # below this, treat the page as scanned/handwritten
 RENDER_DPI = 200
@@ -37,6 +40,9 @@ TILE_OVERLAP = 250
 # grammar -- false positives (e.g. "1st") are harmless since they also live
 # in the free-text content field.
 ID_RE = re.compile(r'^(?=.*[0-9])(?=.*[A-Za-z])[A-Za-z0-9-]{2,12}$')
+
+# Chroma metadata values must be str/int/float/bool -- never None.
+UNKNOWN = "Unknown"
 
 
 def is_equipment_id(word: str) -> bool:
@@ -81,7 +87,9 @@ def iou(a, b) -> float:
 
 
 def extract_scanned(rgb: np.ndarray) -> list[dict]:
-    """Tile the page, OCR each tile, offset boxes to page coords, dedupe overlap."""
+    """Tile the page, OCR each tile, offset boxes to page coords, dedupe
+    overlap (bboxes here are only used for de-duplicating words found twice
+    in overlapping tiles -- they are not persisted)."""
     h, w = rgb.shape[:2]
     step = TILE_SIZE - TILE_OVERLAP
     ys = sorted(set(list(range(0, max(1, h - 1), step)) + [max(0, h - TILE_SIZE)]))
@@ -115,13 +123,17 @@ def extract_scanned(rgb: np.ndarray) -> list[dict]:
     return kept
 
 
-def ingest_file(path: str, conn) -> None:
+def ingest_file(path: str, collection) -> int:
+    """Extract every page of one PDF and upsert it into the Chroma
+    collection. Returns the number of pages added."""
     name = os.path.basename(path)
     plate_id = os.path.splitext(name)[0]
     doc = fitz.open(path)
     n_pages = doc.page_count
     if n_pages > 1:
         print(f"  {name}: multi-page plate ({n_pages} pages) -- classifying each page independently")
+
+    ids, documents, metadatas = [], [], []
     try:
         for i, page in enumerate(doc):
             page_no = i + 1
@@ -138,10 +150,6 @@ def ingest_file(path: str, conn) -> None:
                 if pix.n == 4:
                     arr = arr[:, :, :3]
                 words = extract_scanned(np.ascontiguousarray(arr))
-                scale = 72.0 / RENDER_DPI  # OCR bboxes are in render-DPI pixels -> PDF points
-                for w in words:
-                    x0, y0, x1, y1 = w["bbox"]
-                    w["bbox"] = (x0 * scale, y0 * scale, x1 * scale, y1 * scale)
                 mean_conf = sum(w["confidence"] for w in words) / len(words) if words else 0.0
                 quality = "ocr-high" if mean_conf >= 0.7 else "ocr-low"
 
@@ -149,50 +157,67 @@ def ingest_file(path: str, conn) -> None:
             eq_ids = " ".join(sorted({w["word"] for w in words if is_equipment_id(w["word"])}))
             meta = metadata.guess_metadata(plate_id, content)
 
-            conn.execute(
-                "INSERT OR REPLACE INTO plates VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-                (plate_id, page_no, meta["region"], meta["region_code"], meta["utility"],
-                 meta["facility_type"], meta["metadata_source"], meta["metadata_confidence"],
-                 quality, rect.width, rect.height, path),
-            )
-            conn.execute("DELETE FROM content_fts WHERE plate_id=? AND page=?", (plate_id, page_no))
-            conn.execute(
-                "INSERT INTO content_fts (content, equipment_ids, plate_id, page) VALUES (?,?,?,?)",
-                (content, eq_ids, plate_id, page_no),
-            )
-            conn.execute("DELETE FROM word_positions WHERE plate_id=? AND page=?", (plate_id, page_no))
-            conn.executemany(
-                "INSERT INTO word_positions VALUES (?,?,?,?,?,?,?,?,?,?)",
-                [(plate_id, page_no, w["word"], db.norm(w["word"]),
-                  *w["bbox"], w["confidence"], w["source"]) for w in words],
-            )
             print(f"  {name} p{page_no}: {len(words):4d} words  quality={quality}  "
                   f"utility={meta['utility']} region={meta['region']} "
                   f"facility={meta['facility_type']} (conf={meta['metadata_confidence']})")
+
+            if not content.strip():
+                print(f"  {name} p{page_no}: no text extracted -- skipping (nothing to embed)")
+                continue
+
+            ids.append(vectordb.doc_id(plate_id, page_no))
+            documents.append(content)
+            metadatas.append({
+                "plate_id": plate_id,
+                "page": page_no,
+                "region": meta["region"] or UNKNOWN,
+                "region_code": meta["region_code"] or "",
+                "utility": meta["utility"] or UNKNOWN,
+                "facility_type": meta["facility_type"] or UNKNOWN,
+                "metadata_source": meta["metadata_source"],
+                "metadata_confidence": float(meta["metadata_confidence"]),
+                "extraction_quality": quality,
+                "equipment_ids": eq_ids,
+                "page_width": float(rect.width),
+                "page_height": float(rect.height),
+                "source_path": path,
+            })
     finally:
         doc.close()
 
+    if ids:
+        collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+        vectordb.invalidate_caches()
+    return len(ids)
+
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Ingest map PDFs into the local search index")
+    ap = argparse.ArgumentParser(description="Ingest map PDFs into the local ChromaDB vector index")
     ap.add_argument("--input", required=True, help="folder of PDFs to ingest")
-    ap.add_argument("--reset", action="store_true", help="wipe the index first")
+    ap.add_argument("--reset", action="store_true", help="wipe the vector index first")
     args = ap.parse_args(argv)
 
-    db.init_db(reset=args.reset)
-    conn = db.connect()
+    collection = vectordb.get_collection(reset=args.reset)
     t0 = time.time()
     files = sorted(glob.glob(os.path.join(args.input, "*.pdf")))
     print(f"Ingesting {len(files)} PDFs from {args.input}")
+
+    total_pages = 0
+    failed = []
     for path in files:
         try:
-            ingest_file(path, conn)
-            conn.commit()
+            total_pages += ingest_file(path, collection)
         except Exception as e:
             print(f"  FAILED {path}: {e}")
-    conn.close()
-    print(f"\nDone in {time.time() - t0:.1f}s -> {db.DB_PATH}")
-    return 0
+            failed.append(path)
+
+    elapsed = time.time() - t0
+    print(f"\nDone in {elapsed:.1f}s -> {total_pages} page(s) embedded "
+          f"({collection.count()} total in '{vectordb.COLLECTION_NAME}') "
+          f"at {vectordb.CHROMA_DIR}")
+    if failed:
+        print(f"{len(failed)} file(s) failed: {', '.join(os.path.basename(p) for p in failed)}")
+    return 1 if failed and total_pages == 0 else 0
 
 
 if __name__ == "__main__":
