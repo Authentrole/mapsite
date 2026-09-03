@@ -38,6 +38,7 @@ import metadata  # noqa: E402
 import search_index  # noqa: E402
 
 TEXT_LAYER_MIN_CHARS = 200   # below this, treat the page as scanned/handwritten
+COUNT_SETTLE_SECONDS = 30    # how long to let the index's document count stabilize before reporting it
 RENDER_DPI = 200
 TILE_SIZE = 1500
 TILE_OVERLAP = 250
@@ -134,7 +135,7 @@ def ingest_document(doc: "fitz.Document", plate_id: str, name: str, source_meta:
     Azure AI Search index. `source_meta` (source_type + source_path) is
     merged into every page's document so server.py knows how to re-fetch
     the PDF later (open a local path, or download a blob). Returns the
-    number of pages added."""
+    number of pages Azure AI Search confirmed it indexed."""
     n_pages = doc.page_count
     if n_pages > 1:
         print(f"  {name}: multi-page plate ({n_pages} pages) -- classifying each page independently")
@@ -189,12 +190,22 @@ def ingest_document(doc: "fitz.Document", plate_id: str, name: str, source_meta:
             **source_meta,
         })
 
-    if docs:
-        embeddings = azure_openai.embed_texts(texts)
-        for d, vec in zip(docs, embeddings):
-            d["embedding"] = vec
-        search_index.upsert_documents(docs)
-    return len(docs)
+    if not docs:
+        return 0
+
+    embeddings = azure_openai.embed_texts(texts)
+    # zip() would silently stop at the shorter sequence, leaving the trailing
+    # pages with no "embedding" key -- they would still upload, count toward
+    # the run's total, and be invisible to every vector query afterwards.
+    if len(embeddings) != len(docs):
+        raise RuntimeError(
+            f"{name}: embedding count mismatch -- {len(docs)} page(s) to index "
+            f"but {len(embeddings)} vector(s) returned"
+        )
+    for d, vec in zip(docs, embeddings):
+        d["embedding"] = vec
+    # Confirmed-indexed count, not the attempted count.
+    return search_index.upsert_documents(docs)
 
 
 def ingest_file(path: str) -> int:
@@ -267,10 +278,20 @@ def main(argv=None) -> int:
                 failed.append(path)
 
     elapsed = time.time() - t0
-    print(f"\nDone in {elapsed:.1f}s -> {total_pages} page(s) embedded "
-          f"({search_index.count()} total in '{search_index.AZURE_SEARCH_INDEX_NAME}')")
+    # Read the count only once it stops moving -- the service's document count
+    # lags writes, so the first value back can disagree with both the pages we
+    # just confirmed and whatever the portal shows a moment later.
+    indexed = search_index.count(settle_seconds=COUNT_SETTLE_SECONDS)
+    print(f"\nDone in {elapsed:.1f}s -> {total_pages} page(s) confirmed indexed "
+          f"({indexed} document(s) now in '{search_index.AZURE_SEARCH_INDEX_NAME}')")
     if failed:
         print(f"{len(failed)} file(s) failed: {', '.join(os.path.basename(p) for p in failed)}")
+    if indexed != total_pages:
+        # Not necessarily an error when appending to an index that already held
+        # documents, but after --reset the two must agree, and a mismatch there
+        # is the symptom to chase rather than something to discover in the portal.
+        print(f"WARNING: confirmed-indexed pages ({total_pages}) != documents in index ({indexed}). "
+              f"After --reset these should match exactly.")
     return 1 if failed and total_pages == 0 else 0
 
 

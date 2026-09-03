@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import os
 import re
+import time
 
 from azure.core.credentials import AzureKeyCredential
 from azure.core.exceptions import ResourceNotFoundError
@@ -51,6 +52,13 @@ EMBEDDING_DIMENSIONS = 1536  # text-embedding-3-small -- must match azure_openai
 VECTOR_PROFILE_NAME = "vector-profile"
 HNSW_ALGORITHM_NAME = "hnsw-cosine"
 PAGE_SIZE = 1000  # Azure Search's per-request max for listing/paging
+
+# Index deletion and the document count are both asynchronous on the
+# service side -- see _delete_index_and_wait() and count() for why these
+# waits exist rather than trusting the first value the service returns.
+INDEX_DELETE_POLL_SECONDS = 1.0
+INDEX_DELETE_TIMEOUT_SECONDS = 120.0
+COUNT_SETTLE_POLL_SECONDS = 2.0
 
 _index_client: SearchIndexClient | None = None
 _search_client: SearchClient | None = None
@@ -133,16 +141,43 @@ def _build_index_definition() -> SearchIndex:
     return SearchIndex(name=AZURE_SEARCH_INDEX_NAME, fields=fields, vector_search=vector_search)
 
 
+def _delete_index_and_wait(client: SearchIndexClient) -> None:
+    """Drop the index and block until the service actually reports it gone.
+
+    Azure AI Search processes index deletion asynchronously: delete_index()
+    returns as soon as the request is accepted, not when the drop has
+    finished. Recreating an index of the same name immediately afterwards
+    therefore races the in-flight deletion, and documents written into the
+    "new" index can be discarded when the old drop completes -- an ingest
+    run that reports every page embedded then leaves only a handful of
+    documents behind, with no error anywhere. Wait the name out first.
+    """
+    try:
+        client.delete_index(AZURE_SEARCH_INDEX_NAME)
+    except ResourceNotFoundError:
+        return  # nothing to drop, so nothing to wait for
+    deadline = time.monotonic() + INDEX_DELETE_TIMEOUT_SECONDS
+    while True:
+        try:
+            client.get_index(AZURE_SEARCH_INDEX_NAME)
+        except ResourceNotFoundError:
+            return
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                f"index '{AZURE_SEARCH_INDEX_NAME}' still exists "
+                f"{INDEX_DELETE_TIMEOUT_SECONDS:.0f}s after delete_index() -- refusing to "
+                f"recreate it, since writing into a half-deleted index loses documents silently"
+            )
+        time.sleep(INDEX_DELETE_POLL_SECONDS)
+
+
 def ensure_index(reset: bool = False) -> None:
     """Create the dedicated index if it doesn't exist. reset=True drops
     and recreates it first (used by `ingest.py --reset`). Never touches
     any other index on this Azure AI Search service."""
     client = _get_index_client()
     if reset:
-        try:
-            client.delete_index(AZURE_SEARCH_INDEX_NAME)
-        except ResourceNotFoundError:
-            pass
+        _delete_index_and_wait(client)
     try:
         client.get_index(AZURE_SEARCH_INDEX_NAME)
     except ResourceNotFoundError:
@@ -150,15 +185,64 @@ def ensure_index(reset: bool = False) -> None:
     invalidate_caches()
 
 
-def upsert_documents(docs: list[dict]) -> None:
+def upsert_documents(docs: list[dict]) -> int:
     """Each dict must already carry an 'id' (see doc_id()) and, for a
-    searchable page, an 'embedding' vector of EMBEDDING_DIMENSIONS."""
-    get_search_client().merge_or_upload_documents(documents=docs)
+    searchable page, an 'embedding' vector of EMBEDDING_DIMENSIONS.
+    Returns the number of documents the service confirmed it indexed.
+
+    Azure AI Search reports per-document outcomes instead of raising: a
+    batch can come back 207 Multi-Status with individual documents
+    rejected (throttling, schema mismatch, oversized payload) while the
+    call itself "succeeds". Silently discarding that result is how an
+    ingest run prints a full page count while far fewer documents land,
+    so surface it as an exception -- ingest.py already catches per file
+    and reports the file as failed.
+    """
+    if not docs:
+        return 0
+
+    # A document with no vector indexes fine and is then invisible to every
+    # vector query -- it inflates the document count while being unfindable,
+    # which is worse than a loud failure.
+    vectorless = [d.get("id", "<no id>") for d in docs if not d.get("embedding")]
+    if vectorless:
+        raise ValueError(
+            f"{len(vectorless)}/{len(docs)} document(s) carry no embedding vector and would be "
+            f"indexed unsearchable: {', '.join(vectorless[:5])}"
+        )
+
+    results = get_search_client().merge_or_upload_documents(documents=docs)
     invalidate_caches()
+    failures = [r for r in results if not r.succeeded]
+    if failures:
+        detail = "; ".join(f"{r.key}: {r.error_message or r.status_code}" for r in failures[:5])
+        raise RuntimeError(
+            f"{len(failures)}/{len(docs)} document(s) rejected by Azure AI Search -- {detail}"
+        )
+    return len(results)
 
 
-def count() -> int:
-    return get_search_client().get_document_count()
+def count(settle_seconds: float = 0.0) -> int:
+    """Document count as reported by the service.
+
+    Azure AI Search's document count is eventually consistent and can lag
+    recent writes by seconds, so a count read immediately after an ingest
+    run is not trustworthy evidence of what landed. Pass settle_seconds to
+    poll until the value repeats, which is what you want before printing
+    the number for a human to compare against the portal.
+    """
+    client = get_search_client()
+    if settle_seconds <= 0:
+        return client.get_document_count()
+    deadline = time.monotonic() + settle_seconds
+    previous = client.get_document_count()
+    while time.monotonic() < deadline:
+        time.sleep(COUNT_SETTLE_POLL_SECONDS)
+        current = client.get_document_count()
+        if current == previous:
+            return current
+        previous = current
+    return previous
 
 
 def get_by_id(id_: str) -> dict | None:
