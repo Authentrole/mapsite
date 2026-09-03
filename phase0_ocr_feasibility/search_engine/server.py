@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Local, dependency-free-ish HTTP server for the Tier-3 AI search engine.
 
-Python stdlib only for the HTTP layer (no Flask/FastAPI); ChromaDB is the
-local, embedded vector store. Embeddings and the natural-language layer
-(intent extraction, summaries) call out to Azure OpenAI -- see
-azure_openai.py. Serves:
+Python stdlib only for the HTTP layer (no Flask/FastAPI); Azure AI Search
+is the vector store (see search_index.py). Embeddings and the
+natural-language layer (intent extraction, summaries) call out to Azure
+OpenAI -- see azure_openai.py. Serves:
 
   GET /                                        -> the standalone search harness
   GET /api/search?q=...                        -> JSON ranked list of matching plates (semantic)
@@ -36,7 +36,7 @@ import ai_search as ai_search_mod  # noqa: E402
 import azure_openai  # noqa: E402
 import blob_storage  # noqa: E402
 import ingest as ingest_mod  # noqa: E402
-import vectordb  # noqa: E402
+import search_index  # noqa: E402
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 CROP_DPI = 200
@@ -169,7 +169,7 @@ def _plate_entry(meta: dict) -> dict:
 
 
 def _exact_plate_result(plate_id: str, term: str) -> dict:
-    metas = vectordb.get_by_plate_id(plate_id)
+    metas = search_index.get_by_plate_id(plate_id)
     entry = _plate_entry(metas[0])
     pages = []
     for m in metas:
@@ -194,7 +194,7 @@ def literal_matches(term: str) -> list[dict]:
     if not significant:
         return []
     hits = []
-    for _id, doc_text, meta in vectordb.all_docs():
+    for _id, doc_text, meta in search_index.all_docs():
         tokens = {_norm_word(w) for w in doc_text.split()}
         if any(t in tokens for t in significant):
             hits.append(meta)
@@ -205,17 +205,16 @@ def search(term: str, limit: int = 25) -> dict:
     """If `term` names one specific ingested plate ID exactly (modulo
     case/hyphenation), return only that plate. Otherwise combine two
     retrieval passes: literal text matches (see literal_matches) and
-    semantic nearest-neighbor over the ChromaDB collection built by
+    semantic nearest-neighbor over the Azure AI Search index built by
     ingest.py, for conceptual queries that don't literally appear as
     text. Either way, try to locate `term` as literal text on each matched
     page so the result points at exactly where it is, not just which page
     it's on."""
-    collection = vectordb.get_collection()
-    n = collection.count()
+    n = search_index.count()
     if n == 0:
         return {"query": term, "results": []}
 
-    exact_id = vectordb.match_plate_id(term)
+    exact_id = search_index.match_plate_id(term)
     if exact_id:
         return {"query": term, "results": [_exact_plate_result(exact_id, term)]}
 
@@ -236,9 +235,14 @@ def search(term: str, limit: int = 25) -> dict:
     for meta in literal_matches(term):
         add_candidate(meta, 1.0, True)
 
-    res = collection.query(query_embeddings=[azure_openai.embed_text(term)], n_results=min(limit * 3, n))
-    for meta, dist in zip(res["metadatas"][0], res["distances"][0]):
-        similarity = 1.0 - dist  # cosine space: distance = 1 - cosine_similarity
+    # NOTE: Azure AI Search's "_score" for a vector query is its own
+    # relevance score, not the raw 0..1 cosine similarity Chroma gave us
+    # (`1 - distance`). SEMANTIC_SIMILARITY_FLOOR was calibrated against
+    # Chroma's scale and needs re-checking against real scores once this
+    # runs against live data.
+    hits = search_index.vector_search(azure_openai.embed_text(term), top=min(limit * 3, n))
+    for meta in hits:
+        similarity = meta["_score"]
         if similarity < SEMANTIC_SIMILARITY_FLOOR and meta["plate_id"] not in by_plate:
             continue
         add_candidate(meta, similarity, False)
@@ -262,9 +266,9 @@ def search(term: str, limit: int = 25) -> dict:
 
 def ai_search(user_query: str, limit: int = 25) -> dict:
     """AI-powered search: Azure OpenAI extracts intent; retrieval is
-    semantic (ChromaDB nearest-neighbor over Azure OpenAI embeddings) for
-    every search term, merged and then filtered by the extracted metadata
-    constraints."""
+    semantic (Azure AI Search nearest-neighbor over Azure OpenAI
+    embeddings) for every search term, merged and then filtered by the
+    extracted metadata constraints."""
     intent = ai_search_mod.extract_intent(user_query)
 
     if not intent.get("in_scope", True):
@@ -320,10 +324,7 @@ def ai_search(user_query: str, limit: int = 25) -> dict:
 
 
 def _get_page_meta(plate_id: str, page_no: int) -> dict | None:
-    collection = vectordb.get_collection()
-    got = collection.get(ids=[vectordb.doc_id(plate_id, page_no)])
-    metas = got.get("metadatas") or []
-    return metas[0] if metas else None
+    return search_index.get_by_id(search_index.doc_id(plate_id, page_no))
 
 
 def render_crop(plate_id: str, page_no: int, bbox=None) -> bytes:
@@ -404,9 +405,9 @@ class Handler(BaseHTTPRequestHandler):
 
             if parsed.path == "/api/embedding-status":
                 return self._send_json({
-                    "available": azure_openai.is_available(),
+                    "available": azure_openai.is_available() and search_index.is_available(),
                     "model": azure_openai.AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
-                    "indexedPages": vectordb.count(),
+                    "indexedPages": search_index.count(),
                 })
 
             if parsed.path == "/api/ai-search":
@@ -434,9 +435,7 @@ class Handler(BaseHTTPRequestHandler):
 
             if parsed.path == "/api/pdf":
                 plate = (qs.get("plate") or [""])[0]
-                collection = vectordb.get_collection()
-                got = collection.get(where={"plate_id": plate}, limit=1)
-                metas = got.get("metadatas") or []
+                metas = search_index.get_by_plate_id(plate)
                 if not metas:
                     return self._send_json({"error": "unknown plate"}, 404)
                 meta = metas[0]
@@ -463,8 +462,11 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
-    if not os.path.isdir(vectordb.CHROMA_DIR) or vectordb.count() == 0:
-        print(f"No vector index found at {vectordb.CHROMA_DIR} -- run ingest.py first.")
+    if not search_index.is_available():
+        print("AZURE_SEARCH_ENDPOINT / AZURE_SEARCH_API_KEY are not configured (see search_engine/.env).")
+        return 1
+    if search_index.count() == 0:
+        print(f"Index '{search_index.AZURE_SEARCH_INDEX_NAME}' is empty -- run ingest.py first.")
         return 1
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     print(f"Serving on http://127.0.0.1:{port}  (Ctrl+C to stop)")

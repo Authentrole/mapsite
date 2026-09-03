@@ -2,7 +2,7 @@
 
 Sits between the user's natural language query and the existing search
 engine. The chat deployment interprets the intent, extracts structured
-search parameters, and vectordb/server does the retrieval. After
+search parameters, and search_index/server does the retrieval. After
 retrieval, the same chat deployment summarizes the results in plain
 English.
 

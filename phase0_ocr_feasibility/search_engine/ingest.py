@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Ingest map-plate PDFs into the local ChromaDB vector index (Tier 3,
+"""Ingest map-plate PDFs into the Azure AI Search vector index (Tier 3,
 ingestion half).
 
 Born-digital pages: PyMuPDF word-level extraction (instant, exact). Scanned
 pages: tiled RapidOCR -- single-shot OCR on these ~34-megapixel plates
 misses most labels (recall collapses on dense pages, see ../RESULTS.md);
 tiling with overlap recovers it. The extracted/OCR'd text of each page is
-embedded via Azure OpenAI (see azure_openai.py) and stored in Chroma (see
-vectordb.py) alongside heuristic plate metadata -- no SQLite, no per-word
-bounding boxes.
+embedded via Azure OpenAI (see azure_openai.py) and stored in Azure AI
+Search (see search_index.py) alongside heuristic plate metadata -- no
+SQLite, no per-word bounding boxes.
 
 Source PDFs come from either a local folder or an Azure Blob Storage
 container (see blob_storage.py) -- pick with --source.
@@ -35,7 +35,7 @@ import ocr_engines  # noqa: E402
 import azure_openai  # noqa: E402
 import blob_storage  # noqa: E402
 import metadata  # noqa: E402
-import vectordb  # noqa: E402
+import search_index  # noqa: E402
 
 TEXT_LAYER_MIN_CHARS = 200   # below this, treat the page as scanned/handwritten
 RENDER_DPI = 200
@@ -48,7 +48,6 @@ TILE_OVERLAP = 250
 # in the free-text content field.
 ID_RE = re.compile(r'^(?=.*[0-9])(?=.*[A-Za-z])[A-Za-z0-9-]{2,12}$')
 
-# Chroma metadata values must be str/int/float/bool -- never None.
 UNKNOWN = "Unknown"
 
 
@@ -130,17 +129,17 @@ def extract_scanned(rgb: np.ndarray) -> list[dict]:
     return kept
 
 
-def ingest_document(doc: "fitz.Document", plate_id: str, name: str, collection, source_meta: dict) -> int:
+def ingest_document(doc: "fitz.Document", plate_id: str, name: str, source_meta: dict) -> int:
     """Extract every page of one already-open PDF and upsert it into the
-    Chroma collection. `source_meta` (source_type + source_path) is merged
-    into every page's metadata so server.py knows how to re-fetch the PDF
-    later (open a local path, or download a blob). Returns the number of
-    pages added."""
+    Azure AI Search index. `source_meta` (source_type + source_path) is
+    merged into every page's document so server.py knows how to re-fetch
+    the PDF later (open a local path, or download a blob). Returns the
+    number of pages added."""
     n_pages = doc.page_count
     if n_pages > 1:
         print(f"  {name}: multi-page plate ({n_pages} pages) -- classifying each page independently")
 
-    ids, documents, metadatas = [], [], []
+    docs, texts = [], []
     for i, page in enumerate(doc):
         page_no = i + 1
         text_layer = page.get_text("text")
@@ -171,11 +170,12 @@ def ingest_document(doc: "fitz.Document", plate_id: str, name: str, collection, 
             print(f"  {name} p{page_no}: no text extracted -- skipping (nothing to embed)")
             continue
 
-        ids.append(vectordb.doc_id(plate_id, page_no))
-        documents.append(content)
-        metadatas.append({
+        texts.append(content)
+        docs.append({
+            "id": search_index.doc_id(plate_id, page_no),
             "plate_id": plate_id,
             "page": page_no,
+            "content": content,
             "region": meta["region"] or UNKNOWN,
             "region_code": meta["region_code"] or "",
             "utility": meta["utility"] or UNKNOWN,
@@ -189,38 +189,39 @@ def ingest_document(doc: "fitz.Document", plate_id: str, name: str, collection, 
             **source_meta,
         })
 
-    if ids:
-        embeddings = azure_openai.embed_texts(documents)
-        collection.upsert(ids=ids, documents=documents, metadatas=metadatas, embeddings=embeddings)
-        vectordb.invalidate_caches()
-    return len(ids)
+    if docs:
+        embeddings = azure_openai.embed_texts(texts)
+        for d, vec in zip(docs, embeddings):
+            d["embedding"] = vec
+        search_index.upsert_documents(docs)
+    return len(docs)
 
 
-def ingest_file(path: str, collection) -> int:
+def ingest_file(path: str) -> int:
     """Ingest one PDF from local disk."""
     name = os.path.basename(path)
     plate_id = os.path.splitext(name)[0]
     doc = fitz.open(path)
     try:
-        return ingest_document(doc, plate_id, name, collection, {"source_type": "local", "source_path": path})
+        return ingest_document(doc, plate_id, name, {"source_type": "local", "source_path": path})
     finally:
         doc.close()
 
 
-def ingest_blob(blob_name: str, collection) -> int:
+def ingest_blob(blob_name: str) -> int:
     """Ingest one PDF read from the configured Blob Storage container."""
     name = os.path.basename(blob_name)
     plate_id = os.path.splitext(name)[0]
     pdf_bytes = blob_storage.download_pdf_bytes(blob_name)
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     try:
-        return ingest_document(doc, plate_id, name, collection, {"source_type": "blob", "source_path": blob_name})
+        return ingest_document(doc, plate_id, name, {"source_type": "blob", "source_path": blob_name})
     finally:
         doc.close()
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Ingest map PDFs into the local ChromaDB vector index")
+    ap = argparse.ArgumentParser(description="Ingest map PDFs into the Azure AI Search vector index")
     ap.add_argument("--source", choices=["local", "blob"], default="local",
                      help="where to read PDFs from (default: local)")
     ap.add_argument("--input", help="folder of PDFs to ingest (--source local only)")
@@ -230,6 +231,9 @@ def main(argv=None) -> int:
     if not azure_openai.is_available():
         print("AZURE_OPENAI_API_KEY / AZURE_OPENAI_ENDPOINT are not configured (see search_engine/.env) -- cannot embed pages.")
         return 1
+    if not search_index.is_available():
+        print("AZURE_SEARCH_ENDPOINT / AZURE_SEARCH_API_KEY are not configured (see search_engine/.env).")
+        return 1
 
     if args.source == "local" and not args.input:
         ap.error("--input is required when --source local")
@@ -237,7 +241,7 @@ def main(argv=None) -> int:
         print("AZURE_STORAGE_CONNECTION_STRING / AZURE_STORAGE_CONTAINER are not configured (see search_engine/.env).")
         return 1
 
-    collection = vectordb.get_collection(reset=args.reset)
+    search_index.ensure_index(reset=args.reset)
     t0 = time.time()
 
     total_pages = 0
@@ -248,7 +252,7 @@ def main(argv=None) -> int:
         print(f"Ingesting {len(blob_names)} PDFs from blob container '{blob_storage.AZURE_STORAGE_CONTAINER}'")
         for blob_name in blob_names:
             try:
-                total_pages += ingest_blob(blob_name, collection)
+                total_pages += ingest_blob(blob_name)
             except Exception as e:
                 print(f"  FAILED {blob_name}: {e}")
                 failed.append(blob_name)
@@ -257,15 +261,14 @@ def main(argv=None) -> int:
         print(f"Ingesting {len(files)} PDFs from {args.input}")
         for path in files:
             try:
-                total_pages += ingest_file(path, collection)
+                total_pages += ingest_file(path)
             except Exception as e:
                 print(f"  FAILED {path}: {e}")
                 failed.append(path)
 
     elapsed = time.time() - t0
     print(f"\nDone in {elapsed:.1f}s -> {total_pages} page(s) embedded "
-          f"({collection.count()} total in '{vectordb.COLLECTION_NAME}') "
-          f"at {vectordb.CHROMA_DIR}")
+          f"({search_index.count()} total in '{search_index.AZURE_SEARCH_INDEX_NAME}')")
     if failed:
         print(f"{len(failed)} file(s) failed: {', '.join(os.path.basename(p) for p in failed)}")
     return 1 if failed and total_pages == 0 else 0
