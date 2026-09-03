@@ -47,11 +47,14 @@ CROP_PAD_PT = 60  # padding around a highlighted match, in PDF points
 # named" -- a short query like "10-AB" scores its own page-text embedding
 # LOWER than several unrelated plates (the text body is dominated by other
 # words), so an exact plate-ID match must short-circuit ranking entirely
-# rather than relying on similarity. This floor only applies to the
-# remaining, genuinely fuzzy/conceptual queries, to keep the noise floor
-# (unrelated pages routinely score ~0.15-0.25 against a short query) from
-# flooding results.
-SEMANTIC_SIMILARITY_FLOOR = 0.3
+# rather than relying on similarity. For the remaining, genuinely
+# fuzzy/conceptual queries: Azure AI Search's vector-query score comes
+# back in a tight band regardless of relevance (observed ~0.58-0.60 across
+# both real matches and unrelated plates for one query), so filtering is
+# relative to each query's own top score, not a fixed cutoff. This margin
+# is a first-pass estimate from limited real queries -- widen/narrow it
+# once more query patterns have been observed against live data.
+SEMANTIC_SIMILARITY_MARGIN = 0.05
 
 
 def _norm_word(w: str) -> str:
@@ -235,17 +238,24 @@ def search(term: str, limit: int = 25) -> dict:
     for meta in literal_matches(term):
         add_candidate(meta, 1.0, True)
 
-    # NOTE: Azure AI Search's "_score" for a vector query is its own
-    # relevance score, not the raw 0..1 cosine similarity Chroma gave us
-    # (`1 - distance`). SEMANTIC_SIMILARITY_FLOOR was calibrated against
-    # Chroma's scale and needs re-checking against real scores once this
-    # runs against live data.
+    # Confirmed against live data: Azure AI Search's vector-query "_score"
+    # is nothing like Chroma's `1 - cosine_distance` -- every hit for a
+    # real query came back crammed into a ~0.58-0.60 band regardless of
+    # relevance (e.g. the correct plate at 0.6023 sat behind two unrelated
+    # plates at 0.6036/0.6023, with totally unrelated plates only ~0.02
+    # lower at 0.58). A fixed floor tuned for Chroma's much wider spread
+    # let everything through. There isn't a stable absolute cutoff on a
+    # distribution this compressed, so filter relative to each query's own
+    # top score instead.
     hits = search_index.vector_search(azure_openai.embed_text(term), top=min(limit * 3, n))
-    for meta in hits:
-        similarity = meta["_score"]
-        if similarity < SEMANTIC_SIMILARITY_FLOOR and meta["plate_id"] not in by_plate:
-            continue
-        add_candidate(meta, similarity, False)
+    if hits:
+        top_score = max(h["_score"] for h in hits)
+        relative_floor = top_score - SEMANTIC_SIMILARITY_MARGIN
+        for meta in hits:
+            similarity = meta["_score"]
+            if similarity < relative_floor and meta["plate_id"] not in by_plate:
+                continue
+            add_candidate(meta, similarity, False)
 
     results = list(by_plate.values())
     for entry in results:
@@ -289,6 +299,19 @@ def ai_search(user_query: str, limit: int = 25) -> dict:
     all_results = []
     seen_plates = set()
     terms = intent["search_terms"] or [user_query]
+
+    # If the user's query names one exact plate ID, don't let a *different*,
+    # non-exact extracted term broaden the result set past it -- e.g. Azure
+    # OpenAI splitting "buchanan 13w" into ["Buchanan", "13W"] means neither
+    # piece alone exact-matches "buchanan_13w", so each falls through to a
+    # broad search and the merge balloons to dozens of plates. Check the raw
+    # query first (that's what actually matches), then each extracted term.
+    exact_term = user_query if search_index.match_plate_id(user_query) else next(
+        (t for t in terms if search_index.match_plate_id(t)), None
+    )
+    if exact_term:
+        terms = [exact_term]
+
     for term in terms:
         result = search(term, limit=limit)
         for plate in result.get("results", []):
