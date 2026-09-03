@@ -34,6 +34,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import ai_search as ai_search_mod  # noqa: E402
 import azure_openai  # noqa: E402
+import blob_storage  # noqa: E402
 import ingest as ingest_mod  # noqa: E402
 import vectordb  # noqa: E402
 
@@ -75,13 +76,25 @@ def _merge_bbox(boxes) -> tuple[float, float, float, float]:
             max(b[2] for b in boxes), max(b[3] for b in boxes))
 
 
-def _extract_words_for_page(source_path: str, page_no: int, quality: str) -> list[dict]:
+def _open_source_doc(meta: dict) -> fitz.Document:
+    """Open this page's source PDF regardless of where it lives -- a local
+    path (meta["source_type"] == "local") or a blob in Azure Storage
+    (== "blob", meta["source_path"] is the blob name). ingest.py stamps
+    source_type/source_path on every page at ingest time."""
+    if meta.get("source_type") == "blob":
+        pdf_bytes = blob_storage.download_pdf_bytes(meta["source_path"])
+        return fitz.open(stream=pdf_bytes, filetype="pdf")
+    return fitz.open(meta["source_path"])
+
+
+def _extract_words_for_page(meta: dict, quality: str) -> list[dict]:
     """Re-extract this one page's words on demand so a specific match can
     be located and highlighted -- word positions aren't persisted in the
     vector index (only the joined text is, for embedding). Born-digital:
     instant PyMuPDF re-parse. Scanned: the same tiled RapidOCR ingest.py
     used, so this is slow (seconds) for that handful of OCR'd plates."""
-    doc = fitz.open(source_path)
+    doc = _open_source_doc(meta)
+    page_no = meta["page"]
     try:
         page = doc[page_no - 1]
         if quality == "high":
@@ -108,7 +121,7 @@ def locate_phrase(meta: dict, phrase: str):
     multi-word phrase match first (e.g. "Dewey Avenue" as two adjacent
     words), then falls back to any single word that's an exact or
     substring match. Returns (bbox, matched_text) or (None, None)."""
-    words = _extract_words_for_page(meta["source_path"], meta["page"], meta.get("extraction_quality"))
+    words = _extract_words_for_page(meta, meta.get("extraction_quality"))
     if not words:
         return None, None
 
@@ -323,7 +336,7 @@ def render_crop(plate_id: str, page_no: int, bbox=None) -> bytes:
     if not meta:
         raise ValueError("unknown plate/page")
 
-    doc = fitz.open(meta["source_path"])
+    doc = _open_source_doc(meta)
     try:
         page = doc[page_no - 1]
         zoom = CROP_DPI / 72.0
@@ -426,8 +439,13 @@ class Handler(BaseHTTPRequestHandler):
                 metas = got.get("metadatas") or []
                 if not metas:
                     return self._send_json({"error": "unknown plate"}, 404)
-                with open(metas[0]["source_path"], "rb") as f:
-                    return self._send_bytes(f.read(), "application/pdf")
+                meta = metas[0]
+                if meta.get("source_type") == "blob":
+                    pdf_bytes = blob_storage.download_pdf_bytes(meta["source_path"])
+                else:
+                    with open(meta["source_path"], "rb") as f:
+                        pdf_bytes = f.read()
+                return self._send_bytes(pdf_bytes, "application/pdf")
 
             rel = parsed.path.lstrip("/") or "index.html"
             fpath = os.path.normpath(os.path.join(STATIC_DIR, rel))

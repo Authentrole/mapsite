@@ -10,8 +10,12 @@ embedded via Azure OpenAI (see azure_openai.py) and stored in Chroma (see
 vectordb.py) alongside heuristic plate metadata -- no SQLite, no per-word
 bounding boxes.
 
+Source PDFs come from either a local folder or an Azure Blob Storage
+container (see blob_storage.py) -- pick with --source.
+
 Usage:
-    python ingest.py --input "C:\\path\\to\\PDFs" --reset
+    python ingest.py --source local --input "C:\\path\\to\\PDFs" --reset
+    python ingest.py --source blob --reset
 """
 from __future__ import annotations
 
@@ -29,6 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import ocr_engines  # noqa: E402
 
 import azure_openai  # noqa: E402
+import blob_storage  # noqa: E402
 import metadata  # noqa: E402
 import vectordb  # noqa: E402
 
@@ -125,67 +130,64 @@ def extract_scanned(rgb: np.ndarray) -> list[dict]:
     return kept
 
 
-def ingest_file(path: str, collection) -> int:
-    """Extract every page of one PDF and upsert it into the Chroma
-    collection. Returns the number of pages added."""
-    name = os.path.basename(path)
-    plate_id = os.path.splitext(name)[0]
-    doc = fitz.open(path)
+def ingest_document(doc: "fitz.Document", plate_id: str, name: str, collection, source_meta: dict) -> int:
+    """Extract every page of one already-open PDF and upsert it into the
+    Chroma collection. `source_meta` (source_type + source_path) is merged
+    into every page's metadata so server.py knows how to re-fetch the PDF
+    later (open a local path, or download a blob). Returns the number of
+    pages added."""
     n_pages = doc.page_count
     if n_pages > 1:
         print(f"  {name}: multi-page plate ({n_pages} pages) -- classifying each page independently")
 
     ids, documents, metadatas = [], [], []
-    try:
-        for i, page in enumerate(doc):
-            page_no = i + 1
-            text_layer = page.get_text("text")
-            rect = page.rect
+    for i, page in enumerate(doc):
+        page_no = i + 1
+        text_layer = page.get_text("text")
+        rect = page.rect
 
-            if len(text_layer.strip()) >= TEXT_LAYER_MIN_CHARS:
-                words = extract_born_digital(page)
-                quality = "high"
-            else:
-                zoom = RENDER_DPI / 72.0
-                pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
-                arr = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
-                if pix.n == 4:
-                    arr = arr[:, :, :3]
-                words = extract_scanned(np.ascontiguousarray(arr))
-                mean_conf = sum(w["confidence"] for w in words) / len(words) if words else 0.0
-                quality = "ocr-high" if mean_conf >= 0.7 else "ocr-low"
+        if len(text_layer.strip()) >= TEXT_LAYER_MIN_CHARS:
+            words = extract_born_digital(page)
+            quality = "high"
+        else:
+            zoom = RENDER_DPI / 72.0
+            pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
+            arr = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+            if pix.n == 4:
+                arr = arr[:, :, :3]
+            words = extract_scanned(np.ascontiguousarray(arr))
+            mean_conf = sum(w["confidence"] for w in words) / len(words) if words else 0.0
+            quality = "ocr-high" if mean_conf >= 0.7 else "ocr-low"
 
-            content = " ".join(w["word"] for w in words)
-            eq_ids = " ".join(sorted({w["word"] for w in words if is_equipment_id(w["word"])}))
-            meta = metadata.guess_metadata(plate_id, content)
+        content = " ".join(w["word"] for w in words)
+        eq_ids = " ".join(sorted({w["word"] for w in words if is_equipment_id(w["word"])}))
+        meta = metadata.guess_metadata(plate_id, content)
 
-            print(f"  {name} p{page_no}: {len(words):4d} words  quality={quality}  "
-                  f"utility={meta['utility']} region={meta['region']} "
-                  f"facility={meta['facility_type']} (conf={meta['metadata_confidence']})")
+        print(f"  {name} p{page_no}: {len(words):4d} words  quality={quality}  "
+              f"utility={meta['utility']} region={meta['region']} "
+              f"facility={meta['facility_type']} (conf={meta['metadata_confidence']})")
 
-            if not content.strip():
-                print(f"  {name} p{page_no}: no text extracted -- skipping (nothing to embed)")
-                continue
+        if not content.strip():
+            print(f"  {name} p{page_no}: no text extracted -- skipping (nothing to embed)")
+            continue
 
-            ids.append(vectordb.doc_id(plate_id, page_no))
-            documents.append(content)
-            metadatas.append({
-                "plate_id": plate_id,
-                "page": page_no,
-                "region": meta["region"] or UNKNOWN,
-                "region_code": meta["region_code"] or "",
-                "utility": meta["utility"] or UNKNOWN,
-                "facility_type": meta["facility_type"] or UNKNOWN,
-                "metadata_source": meta["metadata_source"],
-                "metadata_confidence": float(meta["metadata_confidence"]),
-                "extraction_quality": quality,
-                "equipment_ids": eq_ids,
-                "page_width": float(rect.width),
-                "page_height": float(rect.height),
-                "source_path": path,
-            })
-    finally:
-        doc.close()
+        ids.append(vectordb.doc_id(plate_id, page_no))
+        documents.append(content)
+        metadatas.append({
+            "plate_id": plate_id,
+            "page": page_no,
+            "region": meta["region"] or UNKNOWN,
+            "region_code": meta["region_code"] or "",
+            "utility": meta["utility"] or UNKNOWN,
+            "facility_type": meta["facility_type"] or UNKNOWN,
+            "metadata_source": meta["metadata_source"],
+            "metadata_confidence": float(meta["metadata_confidence"]),
+            "extraction_quality": quality,
+            "equipment_ids": eq_ids,
+            "page_width": float(rect.width),
+            "page_height": float(rect.height),
+            **source_meta,
+        })
 
     if ids:
         embeddings = azure_openai.embed_texts(documents)
@@ -194,9 +196,34 @@ def ingest_file(path: str, collection) -> int:
     return len(ids)
 
 
+def ingest_file(path: str, collection) -> int:
+    """Ingest one PDF from local disk."""
+    name = os.path.basename(path)
+    plate_id = os.path.splitext(name)[0]
+    doc = fitz.open(path)
+    try:
+        return ingest_document(doc, plate_id, name, collection, {"source_type": "local", "source_path": path})
+    finally:
+        doc.close()
+
+
+def ingest_blob(blob_name: str, collection) -> int:
+    """Ingest one PDF read from the configured Blob Storage container."""
+    name = os.path.basename(blob_name)
+    plate_id = os.path.splitext(name)[0]
+    pdf_bytes = blob_storage.download_pdf_bytes(blob_name)
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    try:
+        return ingest_document(doc, plate_id, name, collection, {"source_type": "blob", "source_path": blob_name})
+    finally:
+        doc.close()
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Ingest map PDFs into the local ChromaDB vector index")
-    ap.add_argument("--input", required=True, help="folder of PDFs to ingest")
+    ap.add_argument("--source", choices=["local", "blob"], default="local",
+                     help="where to read PDFs from (default: local)")
+    ap.add_argument("--input", help="folder of PDFs to ingest (--source local only)")
     ap.add_argument("--reset", action="store_true", help="wipe the vector index first")
     args = ap.parse_args(argv)
 
@@ -204,19 +231,36 @@ def main(argv=None) -> int:
         print("AZURE_OPENAI_API_KEY / AZURE_OPENAI_ENDPOINT are not configured (see search_engine/.env) -- cannot embed pages.")
         return 1
 
+    if args.source == "local" and not args.input:
+        ap.error("--input is required when --source local")
+    if args.source == "blob" and not blob_storage.is_available():
+        print("AZURE_STORAGE_CONNECTION_STRING / AZURE_STORAGE_CONTAINER are not configured (see search_engine/.env).")
+        return 1
+
     collection = vectordb.get_collection(reset=args.reset)
     t0 = time.time()
-    files = sorted(glob.glob(os.path.join(args.input, "*.pdf")))
-    print(f"Ingesting {len(files)} PDFs from {args.input}")
 
     total_pages = 0
     failed = []
-    for path in files:
-        try:
-            total_pages += ingest_file(path, collection)
-        except Exception as e:
-            print(f"  FAILED {path}: {e}")
-            failed.append(path)
+
+    if args.source == "blob":
+        blob_names = blob_storage.list_pdf_blobs()
+        print(f"Ingesting {len(blob_names)} PDFs from blob container '{blob_storage.AZURE_STORAGE_CONTAINER}'")
+        for blob_name in blob_names:
+            try:
+                total_pages += ingest_blob(blob_name, collection)
+            except Exception as e:
+                print(f"  FAILED {blob_name}: {e}")
+                failed.append(blob_name)
+    else:
+        files = sorted(glob.glob(os.path.join(args.input, "*.pdf")))
+        print(f"Ingesting {len(files)} PDFs from {args.input}")
+        for path in files:
+            try:
+                total_pages += ingest_file(path, collection)
+            except Exception as e:
+                print(f"  FAILED {path}: {e}")
+                failed.append(path)
 
     elapsed = time.time() - t0
     print(f"\nDone in {elapsed:.1f}s -> {total_pages} page(s) embedded "
