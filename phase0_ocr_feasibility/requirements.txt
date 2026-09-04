@@ -7,6 +7,8 @@ azure-search-documents==11.5.2   # vector store for search_engine (metadata + ve
 openai>=1.50.0          # Azure OpenAI client for search_engine (chat + embeddings)
 python-dotenv>=1.0.0    # loads search_engine/.env (Azure OpenAI key/endpoint/deployments)
 azure-storage-blob>=12.19.0   # optional: read source PDFs from Blob Storage instead of a local folder
+requests>=2.31.0        # sync_from_doc_processor.py: talks to Con Edison's on-prem Document Processor API
+requests-negotiate-sspi>=0.5.2   # Windows Integrated (NTLM/Negotiate) auth using the current domain logon -- Windows-only, VDI only
 
 # OCR engines (install at least one)
 

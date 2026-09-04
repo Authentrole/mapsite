@@ -49,3 +49,12 @@ def list_pdf_blobs() -> list[str]:
 def download_pdf_bytes(blob_name: str) -> bytes:
     """Download one blob's raw bytes (a PDF)."""
     return get_container_client().download_blob(blob_name).readall()
+
+
+def upload_pdf_bytes(blob_name: str, data: bytes, overwrite: bool = False) -> None:
+    """Upload raw PDF bytes to the container, e.g. from doc_processor_client.py
+    so a sync script can push straight to Blob Storage without a manual
+    download+upload round trip. overwrite defaults to False so a repeat
+    sync run can't silently clobber a file -- callers that already checked
+    list_pdf_blobs() and mean to overwrite can pass True explicitly."""
+    get_container_client().upload_blob(name=blob_name, data=data, overwrite=overwrite)

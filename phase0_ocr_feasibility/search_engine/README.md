@@ -67,6 +67,29 @@ values).
 | `AZURE_SEARCH_INDEX_NAME` | `egis-mapsite-electric-index` | Dedicated index name -- other indexes on the same service are never touched |
 | `AZURE_STORAGE_CONNECTION_STRING` | *(only for `--source blob`)* | Blob Storage connection string |
 | `AZURE_STORAGE_CONTAINER` | *(only for `--source blob`)* | Container holding the source PDFs |
+| `DOC_PROCESSOR_BASE_URL` | `https://maps.conedison.net/server` | Con Edison's on-prem Document Processor API (only for `sync_from_doc_processor.py`) |
+
+### Pulling PDFs directly from the Document Processor
+
+`sync_from_doc_processor.py` pulls a capped batch of Electric PDFs from Con
+Edison's on-prem Document Processor API straight into Blob Storage, split
+across regions -- no manual download/upload round trip. It authenticates
+with the current Windows logon (NTLM/Negotiate via `requests-negotiate-sspi`)
+and only works from a domain-joined host with a path to
+`maps.conedison.net` (the VDI); it will not authenticate from anywhere
+else. Everything it uploads lands under the `doc_processor/` blob prefix,
+kept apart from the existing hand-uploaded corpus at the container root.
+
+```powershell
+python sync_from_doc_processor.py --limit 100
+# or scope regions explicitly:
+python sync_from_doc_processor.py --limit 100 --regions Bronx,Brooklyn,Queens,Westchester
+```
+
+This is a manual, capped validation run, not the planned daily-sync Azure
+Function (which needs a persisted file catalog for add/remove diffing at
+full-corpus scale -- ~627k files in the Electric commodity alone as of
+2026-09-04 -- and is a separate, not-yet-started build).
 
 Embeddings (page text at ingest time, query text at search time) and the
 natural-language layer (intent + summary) both call Azure OpenAI -- there
