@@ -256,9 +256,18 @@ def ai_search(user_query: str, limit: int = 25) -> dict:
     exact-match search() used by /api/search (plate-ID / literal-text
     only, no semantic fallback), merged and then filtered by the
     extracted metadata constraints."""
+    # Checked before the LLM's in_scope judgment gets a say: a bare,
+    # ambiguous-looking plate ID (e.g. "bucharea") can get classified as
+    # off-topic trivia by the intent model even though it's a real,
+    # deterministically verifiable ingested plate -- confirmed live, where
+    # this got rejected with in_scope=false and never reached retrieval at
+    # all. A local, authoritative plate-ID match always overrides that
+    # guess: if it's really in the index, it's in scope, full stop.
+    exact_plate_id = search_index.match_plate_id(user_query)
+
     intent = ai_search_mod.extract_intent(user_query)
 
-    if not intent.get("in_scope", True):
+    if not intent.get("in_scope", True) and not exact_plate_id:
         return {
             "query": user_query,
             "intent": intent,
@@ -283,7 +292,7 @@ def ai_search(user_query: str, limit: int = 25) -> dict:
     # piece alone exact-matches "buchanan_13w", so each falls through to a
     # broad search and the merge balloons to dozens of plates. Check the raw
     # query first (that's what actually matches), then each extracted term.
-    exact_term = user_query if search_index.match_plate_id(user_query) else next(
+    exact_term = user_query if exact_plate_id else next(
         (t for t in terms if search_index.match_plate_id(t)), None
     )
     if exact_term:
