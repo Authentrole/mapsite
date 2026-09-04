@@ -35,6 +35,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import time
 from collections.abc import Iterator
 
 import requests
@@ -134,6 +135,52 @@ def search_files(*, commodity: str = "Electric", region: str = "", limit: int | 
             yielded += 1
             if limit is not None and yielded >= limit:
                 return
+        page_index += 1
+
+
+def iter_search_pages(
+    *,
+    commodity: str = "Electric",
+    region: str = "",
+    page_size: int,
+    start_page: int = 1,
+    max_retries: int = 5,
+    retry_backoff_seconds: float = 5.0,
+) -> Iterator[tuple[int, list[str], int | None]]:
+    """Page-level driver for a full-catalog crawl (see
+    build_file_catalog.py). Files/Search has been observed, live, to swing
+    between sub-second and 90s+ timeouts on the exact same request with
+    no client-side change -- transient server-side slowness, not
+    something a fixed page size or a fresh session reliably avoids. So
+    each page gets its own retry-with-backoff here rather than letting one
+    bad page kill a multi-hour crawl.
+
+    Yields (page_index, names, total_files_reported) per page. Stops when
+    a page comes back with no names (catalog exhausted) or a page fails
+    every retry (raises, so the caller's persisted progress reflects only
+    fully-completed pages).
+    """
+    page_index = start_page
+    while True:
+        last_error: Exception | None = None
+        data = None
+        for attempt in range(max_retries):
+            try:
+                data = _search_page(commodity=commodity, region=region, page_index=page_index, page_size=page_size)
+                last_error = None
+                break
+            except Exception as e:
+                last_error = e
+                if attempt < max_retries - 1:
+                    time.sleep(retry_backoff_seconds * (attempt + 1))
+        if last_error is not None:
+            raise RuntimeError(f"page {page_index} failed after {max_retries} attempt(s): {last_error}") from last_error
+
+        names = data.get("fileNames") or []
+        if not names:
+            return
+        total_files = data.get("totalFiles")
+        yield page_index, names, int(total_files) if total_files is not None else None
         page_index += 1
 
 

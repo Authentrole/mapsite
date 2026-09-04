@@ -12,9 +12,17 @@ apart from the existing hand-uploaded corpus at the container root.
 Must run on a domain-joined host with a path to maps.conedison.net (the
 VDI) -- Windows Integrated auth has no meaning anywhere else.
 
+Names normally come from a live Files/Search call per region (default
+mode). Pass --catalog to instead read filenames from a file already
+built by build_file_catalog.py -- decouples the (slow, multi-hour)
+full-catalog enumeration from this script's actual fetch+upload work,
+and Files/Search has been observed, live, to be slow/flaky enough that
+not re-querying it here when a catalog already exists is worth it.
+
 Usage:
     python sync_from_doc_processor.py --limit 100
     python sync_from_doc_processor.py --limit 100 --regions Bronx,Brooklyn,Queens,Westchester
+    python sync_from_doc_processor.py --limit 100 --catalog doc_processor_catalog.txt
 """
 from __future__ import annotations
 
@@ -27,16 +35,46 @@ import doc_processor_client as dpc
 DEFAULT_REGIONS = ["Bronx", "Brooklyn", "Queens", "Westchester"]
 
 
+def _names_from_catalog(path: str, limit: int, already_in_blob: set[str]) -> list[str]:
+    """Read filenames from a build_file_catalog.py output file, skipping
+    ones whose blob destination is already present, stopping once `limit`
+    new names have been collected."""
+    picked: list[str] = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            full_name = line.rstrip("\n")
+            if not full_name:
+                continue
+            if dpc.to_blob_name(full_name) in already_in_blob:
+                continue
+            picked.append(full_name)
+            if len(picked) >= limit:
+                break
+    return picked
+
+
+def _fetch_and_upload(full_name: str, *, commodity: str, region: str, existing: set[str]) -> tuple[str, bool, str]:
+    """Fetch one file and upload it, unless already present. Returns
+    (blob_name, uploaded, message) -- uploaded=False with no exception
+    means it was skipped, not failed."""
+    blob_name = dpc.to_blob_name(full_name)
+    if blob_name in existing:
+        return blob_name, False, f"SKIP  (already in blob) {blob_name}"
+    data = dpc.fetch_pdf_bytes(full_name, commodity=commodity, region=region)
+    blob_storage.upload_pdf_bytes(blob_name, data)
+    existing.add(blob_name)
+    return blob_name, True, f"OK    {blob_name} ({len(data)} bytes)"
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Pull a capped batch of Electric PDFs from the Document Processor into Blob Storage")
-    ap.add_argument("--limit", type=int, default=100, help="total files to pull across all regions combined (default: 100)")
-    ap.add_argument("--regions", default=",".join(DEFAULT_REGIONS), help="comma-separated regions, split evenly")
+    ap.add_argument("--limit", type=int, default=100, help="total files to pull (default: 100)")
+    ap.add_argument("--regions", default=",".join(DEFAULT_REGIONS),
+                     help="comma-separated regions, split evenly (ignored with --catalog)")
     ap.add_argument("--commodity", default="Electric")
+    ap.add_argument("--catalog", help="read filenames from a build_file_catalog.py output file instead of querying Files/Search live")
     args = ap.parse_args(argv)
 
-    regions = [r.strip() for r in args.regions.split(",") if r.strip()]
-    if not regions:
-        ap.error("--regions must name at least one region")
     if args.limit < 1:
         ap.error("--limit must be at least 1")
 
@@ -51,45 +89,66 @@ def main(argv=None) -> int:
         return 1
     print(f"Authenticated to Document Processor as {auth.get('userName')} ({auth.get('userID')})")
 
-    # Split the total limit evenly across regions, handing any remainder
-    # to the first regions in the list so the sum is exactly --limit.
-    per_region, remainder = divmod(args.limit, len(regions))
-    quotas = [per_region + (1 if i < remainder else 0) for i in range(len(regions))]
-
     existing = set(blob_storage.list_pdf_blobs())
     print(f"{len(existing)} PDF(s) already in blob container '{blob_storage.AZURE_STORAGE_CONTAINER}'")
 
     attempted = uploaded = skipped = failed = 0
     failures: list[str] = []
 
-    for region, quota in zip(regions, quotas):
-        print(f"\n{region}: requesting up to {quota} filename(s)")
+    if args.catalog:
+        print(f"\nReading filenames from catalog '{args.catalog}' (up to {args.limit})")
         try:
-            names = list(dpc.search_files(commodity=args.commodity, region=region, limit=quota))
-        except Exception as e:
-            print(f"  FAILED to search {region}: {e}")
-            failed += 1
-            failures.append(f"{region} (search): {e}")
-            continue
-        print(f"{region}: {len(names)} filename(s) returned")
-
+            names = _names_from_catalog(args.catalog, args.limit, existing)
+        except OSError as e:
+            print(f"Could not read catalog '{args.catalog}': {e}")
+            return 1
+        print(f"{len(names)} new filename(s) to fetch")
         for full_name in names:
             attempted += 1
-            blob_name = dpc.to_blob_name(full_name)
-            if blob_name in existing:
-                skipped += 1
-                print(f"  SKIP  (already in blob) {blob_name}")
-                continue
             try:
-                data = dpc.fetch_pdf_bytes(full_name, commodity=args.commodity, region=region)
-                blob_storage.upload_pdf_bytes(blob_name, data)
-                existing.add(blob_name)
-                uploaded += 1
-                print(f"  OK    {blob_name} ({len(data)} bytes)")
+                # The catalog was built with a single unscoped search (region=""),
+                # so fetch the same way -- filePath/fileName alone fully qualify
+                # the file regardless of region.
+                _, was_uploaded, message = _fetch_and_upload(full_name, commodity=args.commodity, region="", existing=existing)
+                uploaded += 1 if was_uploaded else 0
+                skipped += 0 if was_uploaded else 1
+                print(f"  {message}")
             except Exception as e:
                 failed += 1
                 failures.append(f"{full_name}: {e}")
                 print(f"  FAILED {full_name}: {e}")
+    else:
+        regions = [r.strip() for r in args.regions.split(",") if r.strip()]
+        if not regions:
+            ap.error("--regions must name at least one region")
+
+        # Split the total limit evenly across regions, handing any remainder
+        # to the first regions in the list so the sum is exactly --limit.
+        per_region, remainder = divmod(args.limit, len(regions))
+        quotas = [per_region + (1 if i < remainder else 0) for i in range(len(regions))]
+
+        for region, quota in zip(regions, quotas):
+            print(f"\n{region}: requesting up to {quota} filename(s)")
+            try:
+                names = list(dpc.search_files(commodity=args.commodity, region=region, limit=quota))
+            except Exception as e:
+                print(f"  FAILED to search {region}: {e}")
+                failed += 1
+                failures.append(f"{region} (search): {e}")
+                continue
+            print(f"{region}: {len(names)} filename(s) returned")
+
+            for full_name in names:
+                attempted += 1
+                try:
+                    _, was_uploaded, message = _fetch_and_upload(full_name, commodity=args.commodity, region=region, existing=existing)
+                    uploaded += 1 if was_uploaded else 0
+                    skipped += 0 if was_uploaded else 1
+                    print(f"  {message}")
+                except Exception as e:
+                    failed += 1
+                    failures.append(f"{full_name}: {e}")
+                    print(f"  FAILED {full_name}: {e}")
 
     print(f"\nDone: {attempted} attempted, {uploaded} uploaded, {skipped} skipped (already present), {failed} failed")
     if failures:
