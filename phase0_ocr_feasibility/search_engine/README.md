@@ -21,17 +21,22 @@ python server.py 8000
 ## How It Works
 
 ### Without AI (Keyword Mode)
-Semantic (vector) search over extracted map content, via a dedicated Azure
-AI Search index built by `ingest.py`. Enter a plate ID (`11-AD`), street
-name (`Eastchester`), or equipment ID (`1W02`) and get plates ranked by
-embedding similarity, with full-page thumbnails.
+Exact matching over extracted map content, via a dedicated Azure AI Search
+index built by `ingest.py` -- no semantic/embedding fallback. Enter a
+plate ID (`11-AD`) and get exactly that plate; enter a street name
+(`Eastchester`) or equipment ID (`1W02`) and get every plate whose
+extracted text literally contains that word. A query with no literal or
+plate-ID match returns no results, on purpose -- nothing "close" is ever
+substituted in.
 
 ### With AI (Natural Language Mode)
 1. User types a natural language query, e.g. *"show me electrical maps near
    Sound View Avenue in the Bronx"*
 2. **Azure OpenAI** (chat deployment) parses the intent → extracts search
    terms (`Sound View`) and filters (`region: Bronx`, `utility: Electric`)
-3. Each search term is run through the same Azure AI Search semantic search
+3. Each search term is run through the same exact-match search as Keyword
+   Mode above -- Azure OpenAI only extracts terms/filters, it doesn't
+   loosen how a term is matched
 4. Results are filtered by the extracted metadata constraints
 5. **Azure OpenAI** generates a plain-English summary of what was found
 6. UI shows the summary, parsed intent, and the same map-plate cards as before
@@ -41,8 +46,8 @@ embedding similarity, with full-page thumbnails.
 | Endpoint | Description |
 |----------|-------------|
 | `GET /api/ai-status` | Check if Azure OpenAI is configured (`{"available": true/false}`) |
-| `GET /api/ai-search?q=...` | AI natural language search (requires Azure OpenAI config) |
-| `GET /api/search?q=...` | Direct semantic search (no AI, always works once the index exists) |
+| `GET /api/ai-search?q=...` | AI intent extraction + the same exact-match retrieval (requires Azure OpenAI config) |
+| `GET /api/search?q=...` | Direct exact-match search: plate ID or literal text only (no AI, always works once the index exists) |
 | `GET /api/embedding-status` | Size of the Azure AI Search vector index |
 | `GET /api/crop?plate=&page=` | PNG page thumbnail |
 | `GET /api/pdf?plate=...` | Raw source PDF |

@@ -7,8 +7,8 @@ natural-language layer (intent extraction, summaries) call out to Azure
 OpenAI -- see azure_openai.py. Serves:
 
   GET /                                        -> the standalone search harness
-  GET /api/search?q=...                        -> JSON ranked list of matching plates (semantic)
-  GET /api/ai-search?q=...                     -> Azure OpenAI intent + semantic retrieval + summary
+  GET /api/search?q=...                        -> JSON ranked list of matching plates (exact plate-ID / literal-text match only)
+  GET /api/ai-search?q=...                     -> Azure OpenAI intent extraction + the same exact-match retrieval + summary
   GET /api/ai-status                           -> is Azure OpenAI configured
   GET /api/embedding-status                    -> size of the vector index
   GET /api/crop?plate=&page=&x0=&y0=&x1=&y1=    -> PNG crop, highlighted if a bbox is given
@@ -42,19 +42,6 @@ STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 CROP_DPI = 200
 THUMB_MAX_PX = 800
 CROP_PAD_PT = 60  # padding around a highlighted match, in PDF points
-
-# Plain embedding similarity is a poor proxy for "is this the plate the user
-# named" -- a short query like "10-AB" scores its own page-text embedding
-# LOWER than several unrelated plates (the text body is dominated by other
-# words), so an exact plate-ID match must short-circuit ranking entirely
-# rather than relying on similarity. For the remaining, genuinely
-# fuzzy/conceptual queries: Azure AI Search's vector-query score comes
-# back in a tight band regardless of relevance (observed ~0.58-0.60 across
-# both real matches and unrelated plates for one query), so filtering is
-# relative to each query's own top score, not a fixed cutoff. This margin
-# is a first-pass estimate from limited real queries -- widen/narrow it
-# once more query patterns have been observed against live data.
-SEMANTIC_SIMILARITY_MARGIN = 0.05
 
 
 def _norm_word(w: str) -> str:
@@ -118,12 +105,14 @@ def _extract_words_for_page(meta: dict, quality: str) -> list[dict]:
 
 
 def locate_phrase(meta: dict, phrase: str):
-    """Best-effort: find exactly where `phrase` (a street name, plate ID,
-    ...) sits on this specific page, so a result can point at the match
-    instead of showing a plain page thumbnail. Tries a contiguous
-    multi-word phrase match first (e.g. "Dewey Avenue" as two adjacent
-    words), then falls back to any single word that's an exact or
-    substring match. Returns (bbox, matched_text) or (None, None)."""
+    """Find exactly where `phrase` (a street name, plate ID, ...) sits on
+    this specific page, so a result can point at the match instead of
+    showing a plain page thumbnail. Tries a contiguous multi-word phrase
+    match first (e.g. "Dewey Avenue" as two adjacent words), then falls
+    back to any single word that's an exact match -- no substring
+    matching, so a highlighted word is always the term itself, never a
+    word that merely contains it. Returns (bbox, matched_text) or
+    (None, None)."""
     words = _extract_words_for_page(meta, meta.get("extraction_quality"))
     if not words:
         return None, None
@@ -142,7 +131,7 @@ def locate_phrase(meta: dict, phrase: str):
     fallback_terms = [t for t in terms if t not in _GENERIC_STREET_WORDS] or terms
     for t in sorted(fallback_terms, key=len, reverse=True):
         for nw, w in norm_words:
-            if nw == t or (len(t) >= 4 and t in nw):
+            if nw == t:
                 return w["bbox"], w["word"]
     return None, None
 
@@ -206,13 +195,13 @@ def literal_matches(term: str) -> list[dict]:
 
 def search(term: str, limit: int = 25) -> dict:
     """If `term` names one specific ingested plate ID exactly (modulo
-    case/hyphenation), return only that plate. Otherwise combine two
-    retrieval passes: literal text matches (see literal_matches) and
-    semantic nearest-neighbor over the Azure AI Search index built by
-    ingest.py, for conceptual queries that don't literally appear as
-    text. Either way, try to locate `term` as literal text on each matched
-    page so the result points at exactly where it is, not just which page
-    it's on."""
+    case/hyphenation), return only that plate. Otherwise, exact literal
+    text matches only (see literal_matches) -- no semantic/embedding
+    nearest-neighbor fallback, so a plate that doesn't literally contain
+    the query never surfaces just because its embedding happens to be
+    nearby. Either way, try to locate `term` as literal text on each
+    matched page so the result points at exactly where it is, not just
+    which page it's on."""
     n = search_index.count()
     if n == 0:
         return {"query": term, "results": []}
@@ -221,48 +210,28 @@ def search(term: str, limit: int = 25) -> dict:
     if exact_id:
         return {"query": term, "results": [_exact_plate_result(exact_id, term)]}
 
-    # Rank on (literal-hit, similarity) first, WITHOUT calling
-    # locate_phrase yet -- that re-opens the source PDF per page and is by
-    # far the most expensive step here. Only the final, limit-truncated
-    # set of pages needs an actual highlight location.
+    # Rank on similarity first, WITHOUT calling locate_phrase yet -- that
+    # re-opens the source PDF per page and is by far the most expensive
+    # step here. Only the final, limit-truncated set of pages needs an
+    # actual highlight location. Every candidate here is a literal match
+    # (similarity 1.0), so "ranking" is really just a stable grouping by
+    # plate, but the shape is kept close to _exact_plate_result's for
+    # locate_phrase reuse below.
     by_plate: dict[str, dict] = {}
 
-    def add_candidate(meta: dict, similarity: float, literal: bool) -> None:
+    def add_candidate(meta: dict) -> None:
         entry = by_plate.setdefault(meta["plate_id"], _plate_entry(meta))
-        existing = next((p for p in entry["pages"] if p["meta"]["page"] == meta["page"]), None)
-        if existing is None:
-            entry["pages"].append({"meta": meta, "similarity": similarity, "literal": literal})
-        elif literal and not existing["literal"] or similarity > existing["similarity"]:
-            existing.update(similarity=max(similarity, existing["similarity"]), literal=literal or existing["literal"])
+        if not any(p["meta"]["page"] == meta["page"] for p in entry["pages"]):
+            entry["pages"].append({"meta": meta, "similarity": 1.0})
 
     for meta in literal_matches(term):
-        add_candidate(meta, 1.0, True)
-
-    # Confirmed against live data: Azure AI Search's vector-query "_score"
-    # is nothing like Chroma's `1 - cosine_distance` -- every hit for a
-    # real query came back crammed into a ~0.58-0.60 band regardless of
-    # relevance (e.g. the correct plate at 0.6023 sat behind two unrelated
-    # plates at 0.6036/0.6023, with totally unrelated plates only ~0.02
-    # lower at 0.58). A fixed floor tuned for Chroma's much wider spread
-    # let everything through. There isn't a stable absolute cutoff on a
-    # distribution this compressed, so filter relative to each query's own
-    # top score instead.
-    hits = search_index.vector_search(azure_openai.embed_text(term), top=min(limit * 3, n))
-    if hits:
-        top_score = max(h["_score"] for h in hits)
-        relative_floor = top_score - SEMANTIC_SIMILARITY_MARGIN
-        for meta in hits:
-            similarity = meta["_score"]
-            if similarity < relative_floor and meta["plate_id"] not in by_plate:
-                continue
-            add_candidate(meta, similarity, False)
+        add_candidate(meta)
 
     results = list(by_plate.values())
     for entry in results:
-        entry["pages"].sort(key=lambda p: (-int(p["literal"]), -p["similarity"]))
-        entry["bestScore"] = entry["pages"][0]["similarity"]
-        entry["idMatch"] = entry["pages"][0]["literal"]
-    results.sort(key=lambda e: (-int(e["idMatch"]), -e["bestScore"]))
+        entry["pages"].sort(key=lambda p: p["meta"]["page"])
+        entry["bestScore"] = 1.0
+        entry["idMatch"] = True
     results = results[:limit]
 
     for entry in results:
@@ -275,9 +244,10 @@ def search(term: str, limit: int = 25) -> dict:
 
 
 def ai_search(user_query: str, limit: int = 25) -> dict:
-    """AI-powered search: Azure OpenAI extracts intent; retrieval is
-    semantic (Azure AI Search nearest-neighbor over Azure OpenAI
-    embeddings) for every search term, merged and then filtered by the
+    """AI-powered search: Azure OpenAI extracts intent (search terms +
+    metadata filters); retrieval for each extracted term is the same
+    exact-match search() used by /api/search (plate-ID / literal-text
+    only, no semantic fallback), merged and then filtered by the
     extracted metadata constraints."""
     intent = ai_search_mod.extract_intent(user_query)
 
@@ -342,7 +312,7 @@ def ai_search(user_query: str, limit: int = 25) -> dict:
         "summary": summary,
         "results": filtered[:limit],
         "totalFound": len(filtered),
-        "retrieval": "semantic",
+        "retrieval": "exact",
     }
 
 
