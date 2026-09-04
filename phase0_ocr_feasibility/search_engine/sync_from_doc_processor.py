@@ -5,9 +5,13 @@ straight into Azure Blob Storage, split across regions.
 
 This is a manual, capped validation run -- NOT the daily-sync Azure
 Function planned separately (that needs a persisted file catalog for
-add/remove diffing at full-corpus scale; out of scope here). Everything
-this script uploads lands under the 'doc_processor/' blob prefix, kept
-apart from the existing hand-uploaded corpus at the container root.
+add/remove diffing at full-corpus scale; out of scope here). Defaults to
+AZURE_STORAGE_DEVTEST_CONTAINER (a container dedicated to validating
+this Document Processor pull, separate from AZURE_STORAGE_CONTAINER --
+the real corpus ingest.py/server.py serve from). Everything this script
+uploads still lands under the 'doc_processor/' blob prefix regardless of
+--container, so it never collides with any hand-uploaded PDFs sitting
+at a container's root.
 
 Must run on a domain-joined host with a path to maps.conedison.net (the
 VDI) -- Windows Integrated auth has no meaning anywhere else.
@@ -23,6 +27,7 @@ Usage:
     python sync_from_doc_processor.py --limit 100
     python sync_from_doc_processor.py --limit 100 --regions Bronx,Brooklyn,Queens,Westchester
     python sync_from_doc_processor.py --limit 100 --catalog doc_processor_catalog.txt
+    python sync_from_doc_processor.py --limit 100 --container egis-mapsite-electric-container
 """
 from __future__ import annotations
 
@@ -53,7 +58,7 @@ def _names_from_catalog(path: str, limit: int, already_in_blob: set[str]) -> lis
     return picked
 
 
-def _fetch_and_upload(full_name: str, *, commodity: str, region: str, existing: set[str]) -> tuple[str, bool, str]:
+def _fetch_and_upload(full_name: str, *, commodity: str, region: str, container: str, existing: set[str]) -> tuple[str, bool, str]:
     """Fetch one file and upload it, unless already present. Returns
     (blob_name, uploaded, message) -- uploaded=False with no exception
     means it was skipped, not failed."""
@@ -61,7 +66,7 @@ def _fetch_and_upload(full_name: str, *, commodity: str, region: str, existing: 
     if blob_name in existing:
         return blob_name, False, f"SKIP  (already in blob) {blob_name}"
     data = dpc.fetch_pdf_bytes(full_name, commodity=commodity, region=region)
-    blob_storage.upload_pdf_bytes(blob_name, data)
+    blob_storage.upload_pdf_bytes(blob_name, data, container_name=container)
     existing.add(blob_name)
     return blob_name, True, f"OK    {blob_name} ({len(data)} bytes)"
 
@@ -73,13 +78,17 @@ def main(argv=None) -> int:
                      help="comma-separated regions, split evenly (ignored with --catalog)")
     ap.add_argument("--commodity", default="Electric")
     ap.add_argument("--catalog", help="read filenames from a build_file_catalog.py output file instead of querying Files/Search live")
+    ap.add_argument("--container", default=None,
+                     help="blob container to upload into (default: AZURE_STORAGE_DEVTEST_CONTAINER, "
+                          "*not* the real corpus container ingest.py/server.py use)")
     args = ap.parse_args(argv)
 
     if args.limit < 1:
         ap.error("--limit must be at least 1")
 
-    if not blob_storage.is_available():
-        print("AZURE_STORAGE_CONNECTION_STRING / AZURE_STORAGE_CONTAINER are not configured (see search_engine/.env).")
+    container = args.container or blob_storage.AZURE_STORAGE_DEVTEST_CONTAINER
+    if not blob_storage.AZURE_STORAGE_CONNECTION_STRING:
+        print("AZURE_STORAGE_CONNECTION_STRING is not configured (see search_engine/.env).")
         return 1
 
     try:
@@ -89,8 +98,8 @@ def main(argv=None) -> int:
         return 1
     print(f"Authenticated to Document Processor as {auth.get('userName')} ({auth.get('userID')})")
 
-    existing = set(blob_storage.list_pdf_blobs())
-    print(f"{len(existing)} PDF(s) already in blob container '{blob_storage.AZURE_STORAGE_CONTAINER}'")
+    existing = set(blob_storage.list_pdf_blobs(container_name=container))
+    print(f"{len(existing)} PDF(s) already in blob container '{container}'")
 
     attempted = uploaded = skipped = failed = 0
     failures: list[str] = []
@@ -109,7 +118,7 @@ def main(argv=None) -> int:
                 # The catalog was built with a single unscoped search (region=""),
                 # so fetch the same way -- filePath/fileName alone fully qualify
                 # the file regardless of region.
-                _, was_uploaded, message = _fetch_and_upload(full_name, commodity=args.commodity, region="", existing=existing)
+                _, was_uploaded, message = _fetch_and_upload(full_name, commodity=args.commodity, region="", container=container, existing=existing)
                 uploaded += 1 if was_uploaded else 0
                 skipped += 0 if was_uploaded else 1
                 print(f"  {message}")
@@ -141,7 +150,7 @@ def main(argv=None) -> int:
             for full_name in names:
                 attempted += 1
                 try:
-                    _, was_uploaded, message = _fetch_and_upload(full_name, commodity=args.commodity, region=region, existing=existing)
+                    _, was_uploaded, message = _fetch_and_upload(full_name, commodity=args.commodity, region=region, container=container, existing=existing)
                     uploaded += 1 if was_uploaded else 0
                     skipped += 0 if was_uploaded else 1
                     print(f"  {message}")

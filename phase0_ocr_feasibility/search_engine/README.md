@@ -68,6 +68,7 @@ values).
 | `AZURE_STORAGE_CONNECTION_STRING` | *(only for `--source blob`)* | Blob Storage connection string |
 | `AZURE_STORAGE_CONTAINER` | *(only for `--source blob`)* | Container holding the source PDFs |
 | `DOC_PROCESSOR_BASE_URL` | `https://maps.conedison.net/server` | Con Edison's on-prem Document Processor API (only for `sync_from_doc_processor.py`) |
+| `AZURE_STORAGE_DEVTEST_CONTAINER` | `egis-mapsite-devtest-container` | Where `sync_from_doc_processor.py` uploads by default -- kept apart from `AZURE_STORAGE_CONTAINER`, the real corpus `ingest.py`/`server.py` serve from |
 
 ### Pulling PDFs directly from the Document Processor
 
@@ -81,19 +82,41 @@ else. `maps.conedison.net` sits behind a corporate TLS-inspecting proxy
 with its own internal root CA, so `doc_processor_client.py` also calls
 `truststore.inject_into_ssl()` to make `requests` trust the Windows
 certificate store instead of `certifi`'s bundled list -- without it,
-every call fails with `CERTIFICATE_VERIFY_FAILED`. Everything it uploads lands under the `doc_processor/` blob prefix,
-kept apart from the existing hand-uploaded corpus at the container root.
+every call fails with `CERTIFICATE_VERIFY_FAILED`. Everything it uploads lands under the `doc_processor/` blob prefix.
+
+By default this uploads into `AZURE_STORAGE_DEVTEST_CONTAINER`
+(`egis-mapsite-devtest-container`), not the real search-engine corpus --
+this pull is still being validated (`Files/Search` has shown live,
+unpredictable multi-minute slowness/timeouts independent of page size or
+session freshness) and shouldn't land in the container `ingest.py`/
+`server.py` actually serve from until it's trusted. Pass `--container`
+to target a different one explicitly.
 
 ```powershell
 python sync_from_doc_processor.py --limit 100
 # or scope regions explicitly:
 python sync_from_doc_processor.py --limit 100 --regions Bronx,Brooklyn,Queens,Westchester
+# or target a specific container:
+python sync_from_doc_processor.py --limit 100 --container egis-mapsite-electric-container
 ```
 
 This is a manual, capped validation run, not the planned daily-sync Azure
 Function (which needs a persisted file catalog for add/remove diffing at
 full-corpus scale -- ~627k files in the Electric commodity alone as of
 2026-09-04 -- and is a separate, not-yet-started build).
+
+`build_file_catalog.py` enumerates the full Document Processor filename
+list (no blob interaction at all -- it only talks to `Files/Search`) into
+a resumable text file, decoupled from the fetch/upload step above because
+of that same live flakiness:
+
+```powershell
+python build_file_catalog.py --commodity Electric
+# if interrupted (Ctrl+C or a page failing all retries):
+python build_file_catalog.py --commodity Electric --resume
+# then feed the catalog into the capped sync instead of live-searching:
+python sync_from_doc_processor.py --limit 100 --catalog doc_processor_catalog.txt
+```
 
 Embeddings (page text at ingest time, query text at search time) and the
 natural-language layer (intent + summary) both call Azure OpenAI -- there
