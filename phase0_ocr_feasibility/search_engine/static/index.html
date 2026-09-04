@@ -187,20 +187,21 @@ function renderAi(data) {
   // Render results using the same card layout
   const hits = data.results || [];
   meta.textContent = `${hits.length} plate(s) found` + (data.totalFound > hits.length ? ` (showing ${hits.length} of ${data.totalFound})` : '');
-  renderCards(hits);
+  renderCards(hits, data.message);
 }
 
 function render(data) {
   const hits = data.results || [];
   const totalPages = hits.reduce((n, h) => n + h.pages.length, 0);
-  meta.textContent = `${hits.length} plate(s) found for "${data.query}" (${totalPages} matching page(s))` +
-    (data.fuzzy ? '  (fuzzy match — no exact hit)' : '');
-  renderCards(hits);
+  meta.textContent = hits.length
+    ? `${hits.length} plate(s) found for "${data.query}" (${totalPages} matching page(s))`
+    : `0 plate(s) found for "${data.query}"`;
+  renderCards(hits, data.message);
 }
 
-function renderCards(hits) {
+function renderCards(hits, message) {
   if (!hits.length) {
-    results.innerHTML = '<div class="empty">No matching plates found.</div>';
+    results.innerHTML = `<div class="empty">${message || 'No matching plates found.'}</div>`;
     return;
   }
   results.innerHTML = hits.map(h => {
@@ -211,7 +212,6 @@ function renderCards(hits) {
         : `/api/crop?plate=${encodeURIComponent(h.plateId)}&page=${p.page}`;
       const badges = [
         p.idMatch ? '<span class="badge id">ID match</span>' : '',
-        p.fuzzyDistance != null ? `<span class="badge fuzzy">fuzzy (edit dist ${p.fuzzyDistance})</span>` : '',
         `<span class="badge quality-${p.extractionQuality}">${p.extractionQuality}</span>`,
       ].join('');
       return `

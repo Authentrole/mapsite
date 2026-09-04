@@ -204,7 +204,7 @@ def search(term: str, limit: int = 25) -> dict:
     which page it's on."""
     n = search_index.count()
     if n == 0:
-        return {"query": term, "results": []}
+        return {"query": term, "results": [], "message": "The search index is empty -- run ingest.py first."}
 
     exact_id = search_index.match_plate_id(term)
     if exact_id:
@@ -240,7 +240,14 @@ def search(term: str, limit: int = 25) -> dict:
             for p in entry["pages"]
         ]
 
-    return {"query": term, "results": results}
+    out = {"query": term, "results": results}
+    if not results:
+        out["message"] = (
+            f'No exact match for "{term}" -- no plate ID and no literal text match. '
+            f"Try the exact plate ID (e.g. \"11-AD\"), a street name, or an equipment ID as it "
+            f"actually appears on a plate."
+        )
+    return out
 
 
 def ai_search(user_query: str, limit: int = 25) -> dict:
@@ -301,12 +308,23 @@ def ai_search(user_query: str, limit: int = 25) -> dict:
             continue
         filtered.append(plate)
 
-    try:
-        summary = ai_search_mod.summarize_results(user_query, filtered)
-    except Exception:
-        summary = f"Found {len(filtered)} plate(s) matching your query."
+    if not filtered:
+        # Deterministic, not LLM-generated: an empty result set is a plain
+        # fact, and letting the model "summarize" zero results risks it
+        # hedging, guessing, or suggesting something not actually in the
+        # index instead of just saying no exact match was found.
+        summary = (
+            f'No exact match found for "{user_query}". Search here only returns a plate whose '
+            f"ID or text literally matches -- try the exact plate ID (e.g. \"11-AD\"), a street "
+            f"name, or an equipment ID as it actually appears on a plate."
+        )
+    else:
+        try:
+            summary = ai_search_mod.summarize_results(user_query, filtered)
+        except Exception:
+            summary = f"Found {len(filtered)} plate(s) matching your query."
 
-    return {
+    out = {
         "query": user_query,
         "intent": intent,
         "summary": summary,
@@ -314,6 +332,9 @@ def ai_search(user_query: str, limit: int = 25) -> dict:
         "totalFound": len(filtered),
         "retrieval": "exact",
     }
+    if not filtered:
+        out["message"] = summary
+    return out
 
 
 def _get_page_meta(plate_id: str, page_no: int) -> dict | None:
