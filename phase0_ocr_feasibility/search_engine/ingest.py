@@ -219,10 +219,29 @@ def ingest_file(path: str) -> int:
         doc.close()
 
 
+DOC_PROCESSOR_PREFIX = "doc_processor/"  # see doc_processor_client.to_blob_name()
+
+
+def _blob_plate_id(blob_name: str) -> str:
+    """Derive plate_id from a blob path. Files synced from the Document
+    Processor (see doc_processor_client.py) land under 'doc_processor/
+    <region>/.../<name>.pdf' -- the bare filename alone is not unique
+    across regions/boroughs (e.g. two different plates both named
+    "50-AB" in different boroughs), so fold the whole relative path into
+    the plate_id instead of just the basename. Anything outside that
+    prefix (the original hand-uploaded corpus) keeps the plain filename
+    stem it always had, so existing plate_ids don't change."""
+    stem = os.path.splitext(blob_name)[0]
+    if stem.startswith(DOC_PROCESSOR_PREFIX):
+        rel = stem[len(DOC_PROCESSOR_PREFIX):]
+        return rel.replace("/", "_").replace("\\", "_")
+    return os.path.basename(stem)
+
+
 def ingest_blob(blob_name: str) -> int:
     """Ingest one PDF read from the configured Blob Storage container."""
     name = os.path.basename(blob_name)
-    plate_id = os.path.splitext(name)[0]
+    plate_id = _blob_plate_id(blob_name)
     pdf_bytes = blob_storage.download_pdf_bytes(blob_name)
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     try:
