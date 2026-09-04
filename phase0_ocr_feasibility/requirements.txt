@@ -9,6 +9,7 @@ python-dotenv>=1.0.0    # loads search_engine/.env (Azure OpenAI key/endpoint/de
 azure-storage-blob>=12.19.0   # optional: read source PDFs from Blob Storage instead of a local folder
 requests>=2.31.0        # sync_from_doc_processor.py: talks to Con Edison's on-prem Document Processor API
 requests-negotiate-sspi>=0.5.2   # Windows Integrated (NTLM/Negotiate) auth using the current domain logon -- Windows-only, VDI only
+truststore>=0.8.0       # makes `requests` trust the OS/Windows cert store -- needed behind the corporate TLS-inspecting proxy in front of maps.conedison.net
 
 # OCR engines (install at least one)
 

@@ -77,7 +77,11 @@ across regions -- no manual download/upload round trip. It authenticates
 with the current Windows logon (NTLM/Negotiate via `requests-negotiate-sspi`)
 and only works from a domain-joined host with a path to
 `maps.conedison.net` (the VDI); it will not authenticate from anywhere
-else. Everything it uploads lands under the `doc_processor/` blob prefix,
+else. `maps.conedison.net` sits behind a corporate TLS-inspecting proxy
+with its own internal root CA, so `doc_processor_client.py` also calls
+`truststore.inject_into_ssl()` to make `requests` trust the Windows
+certificate store instead of `certifi`'s bundled list -- without it,
+every call fails with `CERTIFICATE_VERIFY_FAILED`. Everything it uploads lands under the `doc_processor/` blob prefix,
 kept apart from the existing hand-uploaded corpus at the container root.
 
 ```powershell

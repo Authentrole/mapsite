@@ -41,6 +41,19 @@ import requests
 from dotenv import load_dotenv
 from requests_negotiate_sspi import HttpNegotiateAuth
 
+# maps.conedison.net sits behind a corporate TLS-inspecting proxy, so its
+# cert chain is signed by an internal root CA. The Windows certificate
+# store already trusts that root (which is why PowerShell's
+# Invoke-WebRequest works out of the box), but Python's `requests` verifies
+# against its own bundled certifi CA list by default, which does not.
+# truststore repoints ssl.SSLContext at the OS store instead, confirmed
+# live against a VDI session on 2026-09-04 (requests raised
+# CERTIFICATE_VERIFY_FAILED / "self-signed certificate in certificate
+# chain" until this was added).
+import truststore  # noqa: E402
+
+truststore.inject_into_ssl()
+
 load_dotenv()
 
 BASE_URL = os.environ.get("DOC_PROCESSOR_BASE_URL", "https://maps.conedison.net/server").rstrip("/")
