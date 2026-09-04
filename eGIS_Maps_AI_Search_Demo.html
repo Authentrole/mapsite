@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>eGIS Maps - AI Search Demo</title>
 <style>
   :root{
@@ -25,6 +26,7 @@
   html, body{
     width:100%;
     height:100%;
+    overflow-x:hidden;
   }
   .app-frame{
     width:100%;
@@ -91,6 +93,7 @@
   .header-search{
     flex:1;
     max-width:520px;
+    min-width:0;
     display:flex;
     align-items:center;
     background:#fff;
@@ -100,6 +103,7 @@
   }
   .header-search input{
     flex:1;
+    min-width:0;
     border:none;
     outline:none;
     font-size:13px;
@@ -133,36 +137,6 @@
     align-items:center;
   }
   .header-icons span{opacity:0.9;cursor:default;}
-
-  .config-bar{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:6px 20px;
-    background:#fff3cd;
-    border-bottom:1px solid #f0c36d;
-    font-size:11.5px;
-    color:#6b5100;
-  }
-  .config-bar input{
-    font-size:11.5px;
-    padding:3px 6px;
-    border:1px solid #d7c290;
-    border-radius:4px;
-    width:220px;
-  }
-  .config-bar button{
-    font-size:11px;
-    padding:3px 10px;
-    border-radius:4px;
-    border:1px solid var(--coned-blue);
-    background:#fff;
-    color:var(--coned-blue);
-    cursor:pointer;
-  }
-  .status-dot{width:8px;height:8px;border-radius:50%;background:#999;display:inline-block;}
-  .status-dot.ok{background:#2fa84f;}
-  .status-dot.bad{background:#d9534f;}
 
   /* ---------- Home module (unchanged below the blue bar) ---------- */
   .search-and-links-row{
@@ -529,6 +503,37 @@
     padding:8px 0;
     background:#fff;
   }
+
+  /* ---------- Responsive breakpoints (layout only -- no elements added/removed) ---------- */
+  @media (max-width:1100px){
+    .maps-grid{grid-template-columns:repeat(3,1fr);}
+  }
+  @media (max-width:900px){
+    header.app-header{flex-wrap:wrap;row-gap:8px;min-height:auto;}
+    .header-search{order:3;flex:1 1 100%;max-width:none;}
+    .header-spacer{display:none;}
+    .search-and-links-row{flex-wrap:wrap;}
+    .search-fields{flex:1 1 100%;}
+    .row-divider{display:none;}
+    .quicklinks{flex-direction:row;flex-wrap:wrap;max-height:none;}
+    .main-body{flex-direction:column;}
+    .sidebar{width:auto;border-right:none;border-bottom:1px solid var(--border);}
+    .maps-grid{grid-template-columns:repeat(2,1fr);}
+    #aiSearchModule{height:calc(100vh - 48px);}
+    .chat-thread{padding:16px;}
+    footer{flex-direction:column;gap:4px;text-align:center;}
+  }
+  @media (max-width:600px){
+    .brand{font-size:16px;}
+    .brand .maps{font-size:15px;}
+    .header-tabs{order:2;flex:1 1 100%;justify-content:center;}
+    .header-icons{gap:10px;font-size:13px;}
+    .field select, .field input[type="text"]{min-width:0;width:100%;}
+    .maps-grid{grid-template-columns:1fr;}
+    .chat-bubble-user{max-width:88%;}
+    .source-crop-img{max-width:100%;}
+    .chat-input-row{padding:10px;}
+  }
 </style>
 </head>
 <body>
@@ -561,15 +566,6 @@
       <span>&#9673;</span><span>&#128276;</span><span>&#128337;</span><span>&#9734;</span><span>&#9993;</span>
     </div>
   </header>
-
-  <div class="config-bar">
-    <span class="status-dot" id="statusDot"></span>
-    <span id="statusText">Checking AI Search backend...</span>
-    <span style="flex:1"></span>
-    API base:
-    <input type="text" id="apiBase" value="http://127.0.0.1:8000">
-    <button onclick="checkStatus()">Recheck</button>
-  </div>
 
   <!-- ================= HOME MODULE (unchanged below the blue bar) ================= -->
   <div id="homeModule">
@@ -686,33 +682,14 @@
 </div>
 
 <script>
+const API_BASE = 'http://127.0.0.1:8000';
+
 function apiBase(){
-  return document.getElementById('apiBase').value.replace(/\/$/, '');
+  return API_BASE;
 }
 
 function timeNow(){
   return new Date().toLocaleString('en-US', { month:'numeric', day:'numeric', year:'2-digit', hour:'numeric', minute:'2-digit' });
-}
-
-async function checkStatus(){
-  const dot = document.getElementById('statusDot');
-  const text = document.getElementById('statusText');
-  dot.className = 'status-dot';
-  text.textContent = 'Checking AI Search backend...';
-  try {
-    const resp = await fetch(apiBase() + '/api/ai-status');
-    const data = await resp.json();
-    if (data.available) {
-      dot.className = 'status-dot ok';
-      text.textContent = 'AI Search backend is reachable and configured.';
-    } else {
-      dot.className = 'status-dot bad';
-      text.textContent = 'Backend reachable, but GEMINI_API_KEY is not configured.';
-    }
-  } catch (e) {
-    dot.className = 'status-dot bad';
-    text.textContent = 'Cannot reach ' + apiBase() + ' — make sure server.py is running.';
-  }
 }
 
 function startNewChat(){
@@ -923,8 +900,6 @@ async function ask(query){
 function setBusy(isBusy){
   document.getElementById('sendBtn').disabled = isBusy;
 }
-
-checkStatus();
 </script>
 
 </body>
