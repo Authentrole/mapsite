@@ -151,6 +151,8 @@ def search_files_under(
     limit: int | None = None,
     max_pages: int = 5000,
     page_size: int = 50,
+    max_retries: int = 5,
+    retry_backoff_seconds: float = 5.0,
 ) -> Iterator[str]:
     """Yield 'folder\\name' strings whose folder starts with
     `folder_prefix` (e.g. 'Bronx\\PrimaryNetwork\\Mono'), scanning
@@ -160,20 +162,28 @@ def search_files_under(
     Mono vs. /Color. Stops once `limit` matches are found, the catalog
     is exhausted, or `max_pages` pages have been scanned without
     reaching either (a safety cap so a rare/misspelled prefix can't
-    turn into a silent, unbounded full-corpus crawl)."""
+    turn into a silent, unbounded full-corpus crawl).
+
+    Uses iter_search_pages() for the actual paging, which retries each
+    page with backoff -- Files/Search has been observed, live, to swing
+    between sub-second and 90s+ timeouts on the identical request, so a
+    scan of any real length needs that retry to survive."""
     prefix = folder_prefix.rstrip("\\") + "\\"
     yielded = 0
-    for page_index in range(1, max_pages + 1):
-        data = _search_page(commodity=commodity, region="", page_index=page_index, page_size=page_size)
-        names = data.get("fileNames") or []
-        if not names:
-            return
+    pages_seen = 0
+    for _page_index, names, _total in iter_search_pages(
+        commodity=commodity, region="", page_size=page_size,
+        max_retries=max_retries, retry_backoff_seconds=retry_backoff_seconds,
+    ):
+        pages_seen += 1
         for name in names:
             if name.startswith(prefix):
                 yield name
                 yielded += 1
                 if limit is not None and yielded >= limit:
                     return
+        if pages_seen >= max_pages:
+            return
 
 
 def iter_search_pages(
