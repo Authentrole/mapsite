@@ -21,13 +21,19 @@ mode). Pass --catalog to instead read filenames from a file already
 built by build_file_catalog.py -- decouples the (slow, multi-hour)
 full-catalog enumeration from this script's actual fetch+upload work,
 and Files/Search has been observed, live, to be slow/flaky enough that
-not re-querying it here when a catalog already exists is worth it.
+not re-querying it here when a catalog already exists is worth it. Pass
+--file-path to instead pull everything under one exact folder (e.g.
+"Bronx/PrimaryNetwork/Mono") -- confirmed live that Files/Search's
+fileName filter narrows correctly; filePath as a scoping filter here is
+unconfirmed, so check the printed filename count before assuming it's
+the whole folder.
 
 Usage:
     python sync_from_doc_processor.py --limit 100
     python sync_from_doc_processor.py --limit 100 --regions Bronx,Brooklyn,Queens,Westchester
     python sync_from_doc_processor.py --limit 100 --catalog doc_processor_catalog.txt
     python sync_from_doc_processor.py --limit 100 --container egis-mapsite-electric-container
+    python sync_from_doc_processor.py --limit 500 --file-path "Bronx\\PrimaryNetwork\\Mono"
 """
 from __future__ import annotations
 
@@ -78,6 +84,7 @@ def main(argv=None) -> int:
                      help="comma-separated regions, split evenly (ignored with --catalog)")
     ap.add_argument("--commodity", default="Electric")
     ap.add_argument("--catalog", help="read filenames from a build_file_catalog.py output file instead of querying Files/Search live")
+    ap.add_argument("--file-path", help="pull everything under one exact Document Processor folder, e.g. 'Bronx\\PrimaryNetwork\\Mono' (overrides --regions/--catalog)")
     ap.add_argument("--container", default=None,
                      help="blob container to upload into (default: AZURE_STORAGE_DEVTEST_CONTAINER, "
                           "*not* the real corpus container ingest.py/server.py use)")
@@ -104,7 +111,29 @@ def main(argv=None) -> int:
     attempted = uploaded = skipped = failed = 0
     failures: list[str] = []
 
-    if args.catalog:
+    if args.file_path:
+        print(f"\nRequesting up to {args.limit} filename(s) under '{args.file_path}'")
+        try:
+            names = list(dpc.search_files(commodity=args.commodity, file_path=args.file_path, limit=args.limit))
+        except Exception as e:
+            print(f"  FAILED to search '{args.file_path}': {e}")
+            return 1
+        print(f"{len(names)} filename(s) returned")
+        for full_name in names:
+            attempted += 1
+            try:
+                # filePath/fileName are re-derived from the returned name (see
+                # dpc.split_path), not passed through from --file-path directly --
+                # PDFFile needs them split exactly as Search glued them together.
+                _, was_uploaded, message = _fetch_and_upload(full_name, commodity=args.commodity, region="", container=container, existing=existing)
+                uploaded += 1 if was_uploaded else 0
+                skipped += 0 if was_uploaded else 1
+                print(f"  {message}")
+            except Exception as e:
+                failed += 1
+                failures.append(f"{full_name}: {e}")
+                print(f"  FAILED {full_name}: {e}")
+    elif args.catalog:
         print(f"\nReading filenames from catalog '{args.catalog}' (up to {args.limit})")
         try:
             names = _names_from_catalog(args.catalog, args.limit, existing)

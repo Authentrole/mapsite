@@ -105,9 +105,9 @@ def to_blob_name(full_name: str) -> str:
     return f"doc_processor/{safe_folder}/{name}.pdf" if safe_folder else f"doc_processor/{name}.pdf"
 
 
-def _search_page(*, commodity: str, region: str, page_index: int, page_size: int) -> dict:
+def _search_page(*, commodity: str, region: str, page_index: int, page_size: int, file_path: str = "") -> dict:
     body = {
-        "commodity": commodity, "region": region, "fileName": "", "filePath": "",
+        "commodity": commodity, "region": region, "fileName": "", "filePath": file_path,
         "fileFormat": "", "fileCount": str(page_size), "pageIndex": str(page_index),
         "includeSubFolders": "true", "pageTemplate": "",
     }
@@ -115,18 +115,19 @@ def _search_page(*, commodity: str, region: str, page_index: int, page_size: int
     resp.raise_for_status()
     data = resp.json()
     if data.get("error"):
-        raise RuntimeError(f"Files/Search error (commodity={commodity!r}, region={region!r}): {data['error']}")
+        raise RuntimeError(f"Files/Search error (commodity={commodity!r}, region={region!r}, filePath={file_path!r}): {data['error']}")
     return data
 
 
-def search_files(*, commodity: str = "Electric", region: str = "", limit: int | None = None) -> Iterator[str]:
-    """Yield 'folder\\name' strings for one commodity/region, paginating
-    automatically, stopping once `limit` names have been yielded (or the
-    catalog is exhausted)."""
+def search_files(*, commodity: str = "Electric", region: str = "", file_path: str = "", limit: int | None = None) -> Iterator[str]:
+    """Yield 'folder\\name' strings for one commodity/region (optionally
+    scoped to an exact folder via file_path, e.g. 'Bronx\\PrimaryNetwork\\
+    Mono'), paginating automatically, stopping once `limit` names have
+    been yielded (or the catalog is exhausted)."""
     page_index = 1
     yielded = 0
     while True:
-        data = _search_page(commodity=commodity, region=region, page_index=page_index, page_size=SEARCH_PAGE_SIZE)
+        data = _search_page(commodity=commodity, region=region, page_index=page_index, page_size=SEARCH_PAGE_SIZE, file_path=file_path)
         names = data.get("fileNames") or []
         if not names:
             return
