@@ -105,9 +105,15 @@ def to_blob_name(full_name: str) -> str:
     return f"doc_processor/{safe_folder}/{name}.pdf" if safe_folder else f"doc_processor/{name}.pdf"
 
 
-def _search_page(*, commodity: str, region: str, page_index: int, page_size: int, file_path: str = "") -> dict:
+def _search_page(*, commodity: str, region: str, page_index: int, page_size: int) -> dict:
+    # filePath is a documented request field, but sending any non-empty
+    # value here was confirmed live to *break* the response -- every field
+    # comes back null (not just an empty fileNames list), which looks like
+    # an unhandled server-side error rather than "no matches". So this
+    # never sends filePath; folder scoping has to happen client-side by
+    # filtering the returned names (see search_files_under()).
     body = {
-        "commodity": commodity, "region": region, "fileName": "", "filePath": file_path,
+        "commodity": commodity, "region": region, "fileName": "", "filePath": "",
         "fileFormat": "", "fileCount": str(page_size), "pageIndex": str(page_index),
         "includeSubFolders": "true", "pageTemplate": "",
     }
@@ -115,19 +121,18 @@ def _search_page(*, commodity: str, region: str, page_index: int, page_size: int
     resp.raise_for_status()
     data = resp.json()
     if data.get("error"):
-        raise RuntimeError(f"Files/Search error (commodity={commodity!r}, region={region!r}, filePath={file_path!r}): {data['error']}")
+        raise RuntimeError(f"Files/Search error (commodity={commodity!r}, region={region!r}): {data['error']}")
     return data
 
 
-def search_files(*, commodity: str = "Electric", region: str = "", file_path: str = "", limit: int | None = None) -> Iterator[str]:
-    """Yield 'folder\\name' strings for one commodity/region (optionally
-    scoped to an exact folder via file_path, e.g. 'Bronx\\PrimaryNetwork\\
-    Mono'), paginating automatically, stopping once `limit` names have
-    been yielded (or the catalog is exhausted)."""
+def search_files(*, commodity: str = "Electric", region: str = "", limit: int | None = None) -> Iterator[str]:
+    """Yield 'folder\\name' strings for one commodity/region, paginating
+    automatically, stopping once `limit` names have been yielded (or the
+    catalog is exhausted)."""
     page_index = 1
     yielded = 0
     while True:
-        data = _search_page(commodity=commodity, region=region, page_index=page_index, page_size=SEARCH_PAGE_SIZE, file_path=file_path)
+        data = _search_page(commodity=commodity, region=region, page_index=page_index, page_size=SEARCH_PAGE_SIZE)
         names = data.get("fileNames") or []
         if not names:
             return
@@ -137,6 +142,38 @@ def search_files(*, commodity: str = "Electric", region: str = "", file_path: st
             if limit is not None and yielded >= limit:
                 return
         page_index += 1
+
+
+def search_files_under(
+    folder_prefix: str,
+    *,
+    commodity: str = "Electric",
+    limit: int | None = None,
+    max_pages: int = 5000,
+    page_size: int = 50,
+) -> Iterator[str]:
+    """Yield 'folder\\name' strings whose folder starts with
+    `folder_prefix` (e.g. 'Bronx\\PrimaryNetwork\\Mono'), scanning
+    unscoped Files/Search pages and filtering client-side -- filePath as
+    a server-side filter is broken (see _search_page), and `region`
+    alone doesn't identify a specific subfolder like PrimaryNetwork/
+    Mono vs. /Color. Stops once `limit` matches are found, the catalog
+    is exhausted, or `max_pages` pages have been scanned without
+    reaching either (a safety cap so a rare/misspelled prefix can't
+    turn into a silent, unbounded full-corpus crawl)."""
+    prefix = folder_prefix.rstrip("\\") + "\\"
+    yielded = 0
+    for page_index in range(1, max_pages + 1):
+        data = _search_page(commodity=commodity, region="", page_index=page_index, page_size=page_size)
+        names = data.get("fileNames") or []
+        if not names:
+            return
+        for name in names:
+            if name.startswith(prefix):
+                yield name
+                yielded += 1
+                if limit is not None and yielded >= limit:
+                    return
 
 
 def iter_search_pages(

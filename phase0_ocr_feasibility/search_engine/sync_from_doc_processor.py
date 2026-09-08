@@ -23,10 +23,11 @@ full-catalog enumeration from this script's actual fetch+upload work,
 and Files/Search has been observed, live, to be slow/flaky enough that
 not re-querying it here when a catalog already exists is worth it. Pass
 --file-path to instead pull everything under one exact folder (e.g.
-"Bronx/PrimaryNetwork/Mono") -- confirmed live that Files/Search's
-fileName filter narrows correctly; filePath as a scoping filter here is
-unconfirmed, so check the printed filename count before assuming it's
-the whole folder.
+"Bronx/PrimaryNetwork/Mono") -- filePath as a server-side Files/Search
+filter was confirmed live to break the response entirely (every field
+comes back null), so this scans unscoped pages and filters by prefix
+client-side instead (see doc_processor_client.search_files_under()).
+That means it can be slow for a prefix that sorts late in the catalog.
 
 Usage:
     python sync_from_doc_processor.py --limit 100
@@ -112,13 +113,14 @@ def main(argv=None) -> int:
     failures: list[str] = []
 
     if args.file_path:
-        print(f"\nRequesting up to {args.limit} filename(s) under '{args.file_path}'")
+        print(f"\nScanning for up to {args.limit} filename(s) under '{args.file_path}' "
+              f"(filePath isn't a working server-side filter -- filtering client-side, may take a while)")
         try:
-            names = list(dpc.search_files(commodity=args.commodity, file_path=args.file_path, limit=args.limit))
+            names = list(dpc.search_files_under(args.file_path, commodity=args.commodity, limit=args.limit))
         except Exception as e:
-            print(f"  FAILED to search '{args.file_path}': {e}")
+            print(f"  FAILED to scan for '{args.file_path}': {e}")
             return 1
-        print(f"{len(names)} filename(s) returned")
+        print(f"{len(names)} filename(s) found under '{args.file_path}'")
         for full_name in names:
             attempted += 1
             try:
