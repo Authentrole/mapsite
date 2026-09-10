@@ -238,14 +238,21 @@ def _blob_plate_id(blob_name: str) -> str:
     return os.path.basename(stem)
 
 
-def ingest_blob(blob_name: str) -> int:
-    """Ingest one PDF read from the configured Blob Storage container."""
+def ingest_blob(blob_name: str, container_name: str | None = None) -> int:
+    """Ingest one PDF read from a Blob Storage container (defaults to
+    AZURE_STORAGE_CONTAINER if container_name is None). The container
+    name is stamped onto every page as source_container so server.py
+    can re-fetch the right blob later even if it didn't come from the
+    default container -- see search_index.py's source_container field."""
     name = os.path.basename(blob_name)
     plate_id = _blob_plate_id(blob_name)
-    pdf_bytes = blob_storage.download_pdf_bytes(blob_name)
+    pdf_bytes = blob_storage.download_pdf_bytes(blob_name, container_name=container_name)
+    resolved_container = container_name or blob_storage.AZURE_STORAGE_CONTAINER
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     try:
-        return ingest_document(doc, plate_id, name, {"source_type": "blob", "source_path": blob_name})
+        return ingest_document(doc, plate_id, name, {
+            "source_type": "blob", "source_path": blob_name, "source_container": resolved_container,
+        })
     finally:
         doc.close()
 
@@ -255,6 +262,10 @@ def main(argv=None) -> int:
     ap.add_argument("--source", choices=["local", "blob"], default="local",
                      help="where to read PDFs from (default: local)")
     ap.add_argument("--input", help="folder of PDFs to ingest (--source local only)")
+    ap.add_argument("--container", default=None,
+                     help="blob container to read from (--source blob only; default: AZURE_STORAGE_CONTAINER). "
+                          "Run once per container to combine sources into one index -- only pass --reset on "
+                          "the first run, or a later run wipes what an earlier one added.")
     ap.add_argument("--reset", action="store_true", help="wipe the vector index first")
     args = ap.parse_args(argv)
 
@@ -278,11 +289,12 @@ def main(argv=None) -> int:
     failed = []
 
     if args.source == "blob":
-        blob_names = blob_storage.list_pdf_blobs()
-        print(f"Ingesting {len(blob_names)} PDFs from blob container '{blob_storage.AZURE_STORAGE_CONTAINER}'")
+        container = args.container or blob_storage.AZURE_STORAGE_CONTAINER
+        blob_names = blob_storage.list_pdf_blobs(container_name=container)
+        print(f"Ingesting {len(blob_names)} PDFs from blob container '{container}'")
         for blob_name in blob_names:
             try:
-                total_pages += ingest_blob(blob_name)
+                total_pages += ingest_blob(blob_name, container_name=container)
             except Exception as e:
                 print(f"  FAILED {blob_name}: {e}")
                 failed.append(blob_name)

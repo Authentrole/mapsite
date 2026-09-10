@@ -70,9 +70,12 @@ def _open_source_doc(meta: dict) -> fitz.Document:
     """Open this page's source PDF regardless of where it lives -- a local
     path (meta["source_type"] == "local") or a blob in Azure Storage
     (== "blob", meta["source_path"] is the blob name). ingest.py stamps
-    source_type/source_path on every page at ingest time."""
+    source_type/source_path/source_container on every page at ingest
+    time -- source_container matters once a page can come from a
+    container other than the default (e.g. AZURE_STORAGE_DEVTEST_CONTAINER
+    via ingest.py --container), so the wrong container isn't assumed."""
     if meta.get("source_type") == "blob":
-        pdf_bytes = blob_storage.download_pdf_bytes(meta["source_path"])
+        pdf_bytes = blob_storage.download_pdf_bytes(meta["source_path"], container_name=meta.get("source_container"))
         return fitz.open(stream=pdf_bytes, filetype="pdf")
     return fitz.open(meta["source_path"])
 
@@ -463,7 +466,7 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send_json({"error": "unknown plate"}, 404)
                 meta = metas[0]
                 if meta.get("source_type") == "blob":
-                    pdf_bytes = blob_storage.download_pdf_bytes(meta["source_path"])
+                    pdf_bytes = blob_storage.download_pdf_bytes(meta["source_path"], container_name=meta.get("source_container"))
                 else:
                     with open(meta["source_path"], "rb") as f:
                         pdf_bytes = f.read()

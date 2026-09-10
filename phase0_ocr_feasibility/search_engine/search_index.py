@@ -137,6 +137,11 @@ def _build_index_definition() -> SearchIndex:
         SimpleField(name="page_height", type=SearchFieldDataType.Double),
         SimpleField(name="source_type", type=SearchFieldDataType.String),
         SimpleField(name="source_path", type=SearchFieldDataType.String),
+        # Which blob container source_path lives in, for source_type="blob" pages
+        # ingested from a container other than AZURE_STORAGE_CONTAINER (e.g. the
+        # devtest container) -- server.py needs this to re-fetch the right blob
+        # for /api/pdf and /api/crop rather than assuming the default container.
+        SimpleField(name="source_container", type=SearchFieldDataType.String),
     ]
     return SearchIndex(name=AZURE_SEARCH_INDEX_NAME, fields=fields, vector_search=vector_search)
 

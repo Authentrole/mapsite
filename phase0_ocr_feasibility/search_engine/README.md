@@ -11,6 +11,9 @@ language layer powered by Azure OpenAI.
 # 2. Make sure the index exists (run ingest first if not)
 python ingest.py --source local --input "C:\path\to\your\PDFs" --reset
 # or: python ingest.py --source blob --reset   (reads PDFs from Blob Storage instead)
+# To combine multiple containers into one index, --reset only on the first run:
+#   python ingest.py --source blob --container egis-mapsite-electric-container --reset
+#   python ingest.py --source blob --container egis-mapsite-devtest-container
 
 # 3. Start the server
 python server.py 8000
