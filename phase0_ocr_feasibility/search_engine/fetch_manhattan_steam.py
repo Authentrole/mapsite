@@ -4,7 +4,7 @@ manhattan_steam_names_raw.txt (the real filename list from the eGIS Maps
 app itself, not from Files/Search -- commodity/region as Files/Search
 request filters were confirmed live to not actually narrow results, so
 this list came from the app UI instead) from the Document Processor API
-and save each as a local PDF.
+and upload each straight into Azure Blob Storage.
 
 Names are pulled one at a time via Files/PDFFile at
 "Manhattan\\Steam\\<name>" (the folder confirmed live via a fileName
@@ -12,20 +12,25 @@ search for "16501-1", which resolved to
 "Manhattan\\Steam\\16501-1" and "Manhattan\\Steam\\Old_BW\\16501-1" --
 this script only pulls the primary Steam folder, not Old_BW).
 
-Resumable: skips any name whose output PDF already exists, so a
-partial run (this endpoint has been observed live to time out
+Uploads land in AZURE_STORAGE_DEVTEST_CONTAINER by default (see
+blob_storage.py) under the same 'doc_processor/' prefix everything else
+pulled from the Document Processor uses (dpc.to_blob_name()) -- kept
+apart from any hand-uploaded corpus at a container's root.
+
+Resumable: skips any name already present in the target container, so
+a partial run (this endpoint has been observed live to time out
 intermittently) can just be re-run to pick up where it left off.
 
 Usage:
     python fetch_manhattan_steam.py
-    python fetch_manhattan_steam.py --input manhattan_steam_names_raw.txt --output-dir "C:\\Users\\ROYRA\\Desktop\\Manhattan Steam"
+    python fetch_manhattan_steam.py --container egis-mapsite-electric-container
 """
 from __future__ import annotations
 
 import argparse
-import os
 import time
 
+import blob_storage
 import doc_processor_client as dpc
 
 DEFAULT_FOLDER = "Manhattan\\Steam"
@@ -48,14 +53,6 @@ def load_names(path: str) -> list[str]:
     return names
 
 
-def sanitize_filename(name: str) -> str:
-    """Windows-illegal filename characters, just in case a plate name
-    ever contains one -- none of the confirmed names do, but this is
-    cheap insurance."""
-    bad = '<>:"/\\|?*'
-    return "".join("_" if c in bad else c for c in name)
-
-
 def fetch_with_retry(full_name: str, *, commodity: str, region: str, max_retries: int = 3, backoff_seconds: float = 5.0) -> bytes:
     last_error: Exception | None = None
     for attempt in range(max_retries):
@@ -69,13 +66,20 @@ def fetch_with_retry(full_name: str, *, commodity: str, region: str, max_retries
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Fetch every Manhattan Steam plate in manhattan_steam_names_raw.txt and save as local PDFs")
+    ap = argparse.ArgumentParser(description="Fetch every Manhattan Steam plate in manhattan_steam_names_raw.txt into Blob Storage")
     ap.add_argument("--input", default="manhattan_steam_names_raw.txt")
     ap.add_argument("--folder", default=DEFAULT_FOLDER, help="Document Processor folder to fetch from")
     ap.add_argument("--commodity", default="Steam")
     ap.add_argument("--region", default="Manhattan")
-    ap.add_argument("--output-dir", default=os.path.join(os.path.expanduser("~"), "Desktop", "Manhattan Steam"))
+    ap.add_argument("--container", default=None,
+                     help="blob container to upload into (default: AZURE_STORAGE_DEVTEST_CONTAINER, "
+                          "*not* the real corpus container ingest.py/server.py use)")
     args = ap.parse_args(argv)
+
+    container = args.container or blob_storage.AZURE_STORAGE_DEVTEST_CONTAINER
+    if not blob_storage.AZURE_STORAGE_CONNECTION_STRING:
+        print("AZURE_STORAGE_CONNECTION_STRING is not configured (see search_engine/.env).")
+        return 1
 
     try:
         names = load_names(args.input)
@@ -84,42 +88,43 @@ def main(argv=None) -> int:
         return 1
     print(f"{len(names)} unique name(s) parsed from '{args.input}'")
 
-    os.makedirs(args.output_dir, exist_ok=True)
-
     try:
         auth = dpc.authenticate()
     except Exception as e:
         print(f"Could not authenticate to the Document Processor: {e}")
         return 1
     print(f"Authenticated to Document Processor as {auth.get('userName')} ({auth.get('userID')})")
-    print(f"Saving to '{args.output_dir}'\n")
 
-    attempted = saved = skipped = failed = 0
+    existing = set(blob_storage.list_pdf_blobs(container_name=container))
+    print(f"{len(existing)} PDF(s) already in blob container '{container}'")
+    print(f"Uploading into '{container}'\n")
+
+    attempted = uploaded = skipped = failed = 0
     failures: list[str] = []
 
     for name in names:
-        out_path = os.path.join(args.output_dir, sanitize_filename(name) + ".pdf")
-        if os.path.exists(out_path):
+        full_name = f"{args.folder}\\{name}"
+        blob_name = dpc.to_blob_name(full_name)
+        if blob_name in existing:
             skipped += 1
-            print(f"  SKIP  (already saved) {name}")
+            print(f"  SKIP  (already in blob) {blob_name}")
             continue
 
         attempted += 1
-        full_name = f"{args.folder}\\{name}"
         try:
             data = fetch_with_retry(full_name, commodity=args.commodity, region=args.region)
-            with open(out_path, "wb") as f:
-                f.write(data)
-            saved += 1
-            print(f"  OK    {name} ({len(data)} bytes)")
+            blob_storage.upload_pdf_bytes(blob_name, data, container_name=container)
+            existing.add(blob_name)
+            uploaded += 1
+            print(f"  OK    {blob_name} ({len(data)} bytes)")
         except Exception as e:
             failed += 1
             failures.append(f"{name}: {e}")
             print(f"  FAILED {name}: {e}")
 
-    print(f"\nDone: {attempted} attempted, {saved} saved, {skipped} already-present, {failed} failed")
+    print(f"\nDone: {attempted} attempted, {uploaded} uploaded, {skipped} already-present, {failed} failed")
     if failures:
-        print("Failures (re-run this script to retry -- it skips anything already saved):")
+        print("Failures (re-run this script to retry -- it skips anything already uploaded):")
         for f in failures:
             print(f"  - {f}")
     return 0
