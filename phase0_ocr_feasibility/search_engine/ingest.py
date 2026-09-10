@@ -175,6 +175,12 @@ def ingest_document(doc: "fitz.Document", plate_id: str, name: str, source_meta:
         docs.append({
             "id": search_index.doc_id(plate_id, page_no),
             "plate_id": plate_id,
+            # The bare filename stem, pre-region-qualification (e.g. "TEMP" for
+            # a plate_id of "Manhattan_Steam_TEMP") -- match_plate_id() falls
+            # back to this so searching by the plate's own printed name/number
+            # still exact-matches even though plate_id had to be qualified to
+            # avoid collisions across regions/folders (see _blob_plate_id()).
+            "short_id": os.path.splitext(name)[0],
             "page": page_no,
             "content": content,
             "region": meta["region"] or UNKNOWN,

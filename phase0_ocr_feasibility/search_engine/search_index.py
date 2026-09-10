@@ -116,6 +116,7 @@ def _build_index_definition() -> SearchIndex:
     fields = [
         SimpleField(name="id", type=SearchFieldDataType.String, key=True),
         SimpleField(name="plate_id", type=SearchFieldDataType.String, filterable=True),
+        SimpleField(name="short_id", type=SearchFieldDataType.String, filterable=True),
         SimpleField(name="page", type=SearchFieldDataType.Int32, filterable=True, sortable=True),
         SearchableField(name="content", type=SearchFieldDataType.String),
         SearchField(
@@ -310,10 +311,24 @@ def all_docs() -> list[tuple[str, str, dict]]:
 def match_plate_id(term: str) -> str | None:
     """Return the ingested plate_id that `term` refers to, if it's an
     exact match once normalized (case/punctuation-insensitive) -- either
-    the whole term or one word within it."""
+    the whole term or one word within it. Matches against the full
+    plate_id first; falls back to short_id (the bare filename stem
+    before region-qualification, e.g. "TEMP" for plate_id
+    "Manhattan_Steam_TEMP") so searching by a plate's own printed
+    name/number still works. A real plate_id match always wins over a
+    short_id alias if both happen to normalize the same way; among
+    short_id collisions (two different plates sharing a bare name in
+    different folders) the first one loaded wins, arbitrarily."""
     global _plate_id_index
     if _plate_id_index is None:
-        _plate_id_index = {norm_id(d["plate_id"]): d["plate_id"] for d in _load_all()}
+        index: dict[str, str] = {}
+        for d in _load_all():
+            short = d.get("short_id")
+            if short:
+                index.setdefault(norm_id(short), d["plate_id"])
+        for d in _load_all():
+            index[norm_id(d["plate_id"])] = d["plate_id"]  # exact plate_id always takes priority
+        _plate_id_index = index
     key = norm_id(term)
     if not key:
         return None
