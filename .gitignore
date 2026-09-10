@@ -4,3 +4,6 @@ phase0_ocr_feasibility/**/__pycache__/
 phase0_ocr_feasibility/**/*.pyc
 phase0_ocr_feasibility/search_engine/.env
 phase0_ocr_feasibility/search_engine/chroma_db/
+
+# Contains live credentials -- never commit (this repo is public)
+HANDOFF.md
