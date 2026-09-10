@@ -130,11 +130,17 @@ def extract_scanned(rgb: np.ndarray) -> list[dict]:
     return kept
 
 
-def ingest_document(doc: "fitz.Document", plate_id: str, name: str, source_meta: dict) -> int:
+def ingest_document(
+    doc: "fitz.Document", plate_id: str, name: str, source_meta: dict,
+    region_hint: str | None = None, utility_hint: str | None = None,
+) -> int:
     """Extract every page of one already-open PDF and upsert it into the
     Azure AI Search index. `source_meta` (source_type + source_path) is
     merged into every page's document so server.py knows how to re-fetch
-    the PDF later (open a local path, or download a blob). Returns the
+    the PDF later (open a local path, or download a blob). region_hint/
+    utility_hint, when given (see _blob_metadata_hints()), are ground
+    truth from the Document Processor's own folder structure and
+    override metadata.py's filename/content heuristics. Returns the
     number of pages Azure AI Search confirmed it indexed."""
     n_pages = doc.page_count
     if n_pages > 1:
@@ -161,7 +167,7 @@ def ingest_document(doc: "fitz.Document", plate_id: str, name: str, source_meta:
 
         content = " ".join(w["word"] for w in words)
         eq_ids = " ".join(sorted({w["word"] for w in words if is_equipment_id(w["word"])}))
-        meta = metadata.guess_metadata(plate_id, content)
+        meta = metadata.guess_metadata(plate_id, content, region_hint=region_hint, utility_hint=utility_hint)
 
         print(f"  {name} p{page_no}: {len(words):4d} words  quality={quality}  "
               f"utility={meta['utility']} region={meta['region']} "
@@ -244,6 +250,31 @@ def _blob_plate_id(blob_name: str) -> str:
     return os.path.basename(stem)
 
 
+_KNOWN_UTILITIES = {"electric", "gas", "steam"}
+
+
+def _blob_metadata_hints(blob_name: str) -> tuple[str | None, str | None]:
+    """Scan a doc_processor/-sourced blob's path segments for ground-truth
+    region/utility, e.g. 'doc_processor/Manhattan/Steam/TEMP.pdf' ->
+    ('Manhattan', 'Steam'). The Document Processor's own folder structure
+    literally encodes these for some commodities (seen live: Steam plates
+    sit under '<Region>/Steam/...'; Electric ones under
+    '<Region>/PrimaryNetwork/<Color|Mono>/...', which has no commodity
+    segment to find -- that's fine, utility_hint just stays None and
+    metadata.py falls back to its content-based guess). Region, unlike
+    utility, has been the first folder segment in every case seen so far,
+    so it's returned whenever the blob is doc_processor/-sourced at all."""
+    stem = os.path.splitext(blob_name)[0]
+    if not stem.startswith(DOC_PROCESSOR_PREFIX):
+        return None, None
+    parts = stem[len(DOC_PROCESSOR_PREFIX):].replace("\\", "/").split("/")
+    if not parts or not parts[0]:
+        return None, None
+    region_hint = parts[0]
+    utility_hint = next((p.capitalize() for p in parts[1:] if p.lower() in _KNOWN_UTILITIES), None)
+    return region_hint, utility_hint
+
+
 def ingest_blob(blob_name: str, container_name: str | None = None) -> int:
     """Ingest one PDF read from a Blob Storage container (defaults to
     AZURE_STORAGE_CONTAINER if container_name is None). The container
@@ -252,13 +283,14 @@ def ingest_blob(blob_name: str, container_name: str | None = None) -> int:
     default container -- see search_index.py's source_container field."""
     name = os.path.basename(blob_name)
     plate_id = _blob_plate_id(blob_name)
+    region_hint, utility_hint = _blob_metadata_hints(blob_name)
     pdf_bytes = blob_storage.download_pdf_bytes(blob_name, container_name=container_name)
     resolved_container = container_name or blob_storage.AZURE_STORAGE_CONTAINER
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     try:
         return ingest_document(doc, plate_id, name, {
             "source_type": "blob", "source_path": blob_name, "source_container": resolved_container,
-        })
+        }, region_hint=region_hint, utility_hint=utility_hint)
     finally:
         doc.close()
 

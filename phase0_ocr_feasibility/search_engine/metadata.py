@@ -54,9 +54,16 @@ _UTILITY_MIN_HITS = 5
 _UTILITY_MIN_DENSITY = 0.005
 
 
-def classify_utility(content: str) -> tuple[str, float]:
-    """Return (utility, confidence). Content-frequency based, not filename
-    based -- filenames in this corpus carry no gas/steam signal at all."""
+def classify_utility(content: str, utility_hint: str | None = None) -> tuple[str, float]:
+    """Return (utility, confidence). utility_hint, when given, is ground
+    truth (e.g. the "Steam" folder segment in a Document Processor path
+    like "Manhattan\\Steam\\TEMP") and always wins -- the content-frequency
+    fallback below exists only because filenames in the original sample
+    corpus carry no gas/steam signal at all, and it defaults to "Electric"
+    whenever gas/steam word density is too low, which is wrong for a
+    real Steam/Gas plate whose text happens to be sparse (e.g. "TEMP")."""
+    if utility_hint in ("Electric", "Gas", "Steam"):
+        return utility_hint, 1.0
     words = content.split()
     total = max(1, len(words))
     gas_hits = len(_GAS_RE.findall(content))
@@ -68,10 +75,17 @@ def classify_utility(content: str) -> tuple[str, float]:
     return "Electric", 0.6   # default: matches the observed corpus overwhelmingly
 
 
-def classify_region(filename_stem: str) -> tuple[str, str, float]:
-    """Return (region_name, short_code, confidence). Filename-suffix
-    heuristic only -- there is no per-file region manifest anywhere in
-    either eGIS Maps repo (verified by grep)."""
+def classify_region(filename_stem: str, region_hint: str | None = None) -> tuple[str, str, float]:
+    """Return (region_name, short_code, confidence). region_hint, when
+    given, is ground truth (e.g. the "Manhattan" folder segment in a
+    Document Processor path) and always wins -- the fallback below is a
+    filename-suffix heuristic that only ever recognized Bronx/Westchester,
+    built for the original flat sample corpus, which never needed to
+    recognize Manhattan/Brooklyn/Queens/Staten Island by name."""
+    if region_hint:
+        for code, name in REGION_CODES.items():
+            if name.replace("_", "").lower() == region_hint.replace("_", "").replace(" ", "").lower():
+                return name, code, 1.0
     if _BRONX_HINT.search(filename_stem) or _GRID_X_SUFFIX.search(filename_stem):
         return "Bronx", "X", 0.7
     if _GRID_W_SUFFIX.search(filename_stem):
@@ -95,13 +109,14 @@ def classify_facility_type(filename_stem: str, utility: str) -> tuple[str, float
     return FACILITY_UNKNOWN, 0.0
 
 
-def guess_metadata(filename_stem: str, content: str) -> dict:
-    utility, u_conf = classify_utility(content)
-    region, region_code, r_conf = classify_region(filename_stem)
+def guess_metadata(filename_stem: str, content: str, region_hint: str | None = None, utility_hint: str | None = None) -> dict:
+    utility, u_conf = classify_utility(content, utility_hint)
+    region, region_code, r_conf = classify_region(filename_stem, region_hint)
     facility, f_conf = classify_facility_type(filename_stem, utility)
+    source = "hint:document_processor_path" if (region_hint or utility_hint) else "heuristic:filename+content"
     return {
         "region": region, "region_code": region_code, "utility": utility,
         "facility_type": facility,
-        "metadata_source": "heuristic:filename+content",
+        "metadata_source": source,
         "metadata_confidence": round((u_conf + r_conf + f_conf) / 3, 2),
     }
